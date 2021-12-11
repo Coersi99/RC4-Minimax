@@ -48,7 +48,7 @@ class Rc4:
 
 
 # this is just used as a test function
-def main():
+def run_tests():
     def to_byte(a, b):
         return int(a+b, 16)
 
@@ -85,4 +85,4 @@ def main():
         expected="97ab8a1bf0afb96132f2f67258da15a8"
     )
 
-main()
+run_tests()
