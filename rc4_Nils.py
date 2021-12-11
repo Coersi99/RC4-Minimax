@@ -18,7 +18,8 @@ class Rc4:
             s = self.state[i]
             k = key[i % len(key)]
 
-            j = (j+s+k) & 0xff
+            j += s+k 
+            j &= 0xff
 
             # swap elements at index i and j
             swap(self.state, i, j)
