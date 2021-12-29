@@ -15,15 +15,17 @@ class Rc4:
 
         self.init_state(key)
 
-       
+
 
     def init_state(self, key):
         j = 0
         for i in range(256):
             s = self.state[i]
-            k = key[i % len(key)]
+            j += s
 
-            j += s+k
+            k = key[i % len(key)]
+            j += k
+
             j &= 0xff
 
             # swap elements at index i and j
@@ -67,7 +69,7 @@ def run_tests():
             print("[test failed] expected output didnt match actual output!")
             return
 
-        print("[test passed]")       
+        print("[test passed]")
 
     test(
         key="0102030405",
