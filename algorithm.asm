@@ -1,7 +1,22 @@
     const SBOX_ADDR=0
-    const KEY_ADDR=256
-    const KEY_LEN=256
+    const KEY_ADDR=80 ;80dec = 50hex
+    const KEY_LEN=4
+    const byte_4=255 ;00000000 00000000 00000000 11111111
+    const byte_3=65280 ;00000000 00000000 11111111 00000000
+    const byte_2=16711680 ;00000000 11111111 00000000 00000000
+    const byte_1=-16777216 ;11111111 00000000 00000000 00000000
 
+read_4:
+    MDR <- MDR AND byte_4
+
+read_3: 
+    MDR <- MDR AND byte_3
+
+read_2: 
+    MDR <- MDR AND byte_2
+
+read_1: 
+    MDR <- MDR AND byte_1
 
 ; init s box 0..256
     ACCU <- 0
