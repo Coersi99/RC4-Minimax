@@ -44,34 +44,33 @@ def decrypt(sbox, input):
     i = 0
     j = 0
     sbox = list(bytes_to_words(sbox))
-    # words are the input we expect to have on the minimax
     words = bytes_to_words(input)
+
     for word in words:
         i += 1
-        i &= 0xff >> 2
+        i &= (0xff >> 2)
 
         xorPattern = 0
-        for i2 in [3, 2, 1, 0]:
-            offset = i2*8
+
+        for i2 in [24, 16, 8, 0]:
             ibox = sbox[i]
-            ibox = ibox >> offset
+            ibox = ibox >> i2
             j += ibox
             j &= 0xff
 
-            ja = j >> 2
-            jb = j & 0b11
+            j1 = j >> 2
+            j2 = j & 0b11
+            j2 *= 8
 
-            offset = jb*8
-            jbox = sbox[ja]
-            jbox = jbox >> offset
+            jbox = sbox[j1]
+            jbox = jbox >> j2
 
-            swapBytes(sbox, i, i2, ja, jb)
+            swapBytes(sbox, i, i2, j1, j2)
 
             acc = jbox + ibox
             acc &= 0xff
-            offset = i2*8
+            acc = acc << i2
 
-            acc = acc << offset
             xorPattern += acc
 
         yield word ^ xorPattern
@@ -81,28 +80,25 @@ def swapBytes(l, i, i2, j, j2):
     a = l[i]
     b = l[j]
 
-    offset_a = 8*i2
-    # save the byte i2 from a
-    res_a = a >> offset_a
+    res_a = a >> i2
     res_a &= 0xff
     # clear that byte in a
-    mask = 0xff << offset_a
+    mask = 0xff << i2
     mask = ~mask
     a &= mask
 
-    offset_b = 8*j2
-    res_b = b >> offset_b
+    res_b = b >> j2
     res_b &= 0xff
 
-    a |= res_b << offset_b
+    a |= res_b << j2
 
-    res_a = res_a << offset_b
+    res_a = res_a << j2
 
-    mask = 0xff << offset_b
+    mask = 0xff << j2
     mask = ~mask
     b &= mask
 
-    b |= res_a << offset_a
+    b |= res_a << i2
 
     l[i] = a
     l[j] = b
@@ -154,6 +150,36 @@ def word_to_bytes(input):
 
 # this is just used as a test function
 
+def verify(a, b):
+    a = list(a)
+    b = list(b)
+    if a != b:
+        print("got     ", a)
+        print("expected", b)
+    else:
+        print("checked!")
+
+def verifySwapByte():
+    cases = [
+        [ [1, 2, 3, 4], 1, 2 ],
+        [ [1, 2, 3, 4], 0, 2 ],
+        [ [1, 2, 3, 4], 3, 2 ],
+        [ [1, 2, 3, 4, 5, 6, 7, 8], 3, 2 ],
+        [ [1, 2, 3, 4, 5, 6, 7, 8], 6, 1 ],
+        [ [1, 2, 3, 4, 5, 6, 7, 8], 2, 7 ],
+    ]
+
+    for [l, a, b] in cases:
+        bytes = list(bytes_to_words(l))
+        a1 = a >> 2
+        a2 = (a&3)*8
+        b1 = b >> 2
+        b2 = (b&3)*8
+        swapBytes(bytes, a1, a2, b1, b2)
+        got = list(word_to_bytes(bytes))
+        swap(l, a, b)
+
+        verify(l, got)
 
 def run_tests():
 
@@ -164,22 +190,16 @@ def run_tests():
         s = list(s)
         return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
 
-    def verify(a, b):
-        a = list(a)
-        b = list(b)
-        if a != b:
-            print("got     ", a)
-            print("expected", b)
-        print("verified!")
-
     print("     Test utility 1")
     verify(map(list, chunks(2, [0, 0, 0, 0])), [[0, 0], [0, 0]])
     verify(map(list, chunks(4, [0, 0, 0, 0])), [[0, 0, 0, 0]])
     verify(bytes_to_words([0, 0, 0, 0xff]), [0xff])
 
     verify(bytes_to_words([0, 0, 0x8a, 0xff]), [0x8aff])
-
     verify(bytes_to_words([0xff, 0, 0xff, 0xff]), [0xff00ffff])
+
+    print("     Test swapByte")
+    verifySwapByte()
 
     print("     Test utility 2")
     cases = ["010203040506070809", "aabbccddeeff0011"]
@@ -199,7 +219,7 @@ def run_tests():
         got = list(word_to_bytes(decrypt(s_box(key), input)))
 
         if (got != expected):
-            print("[test failed] expected output didnt match actual output!")
+            print("\n[test failed] expected output didnt match actual output!")
             print('got', got)
             print('expected', expected)
             return
