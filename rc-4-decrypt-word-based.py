@@ -8,21 +8,22 @@ def swap(list, i, j):
 
 
 def s_box(key):
-        state = list(range(256))
-        j = 0
-        for i in range(256):
-            s = state[i]
-            j += s
+    state = list(range(256))
+    j = 0
+    for i in range(256):
+        s = state[i]
+        j += s
 
-            k = key[i % len(key)]
-            j += k
+        k = key[i % len(key)]
+        j += k
 
-            j &= 0xff
+        j &= 0xff
 
-            # swap elements at index i and j
-            swap(state, i, j)
+        # swap elements at index i and j
+        swap(state, i, j)
 
-        return state
+    return state
+
 
 def prga_next(self):
     # first mutate s-box
@@ -38,6 +39,7 @@ def prga_next(self):
     index &= 255
     return self.state[index]
 
+
 def decrypt(sbox, input):
     i = 0
     j = 0
@@ -45,41 +47,82 @@ def decrypt(sbox, input):
     # words are the input we expect to have on the minimax
     words = bytes_to_words(input)
     for word in words:
-        index = 0
-        for byteIndex in range(0, 4):
-            i += 1
-            i &= 0xff
-            addrByte = 3-i&0b11
-            addrByte8 = addrByte*8
-            j += (sbox[i>>2] >> addrByte8 ) & 0xff
+        i += 1
+        i &= 0xff >> 2
+
+        xorPattern = 0
+        for i2 in [3, 2, 1, 0]:
+            offset = i2*8
+            ibox =  sbox[i]
+            ibox = ibox >> offset
+            j += ibox
             j &= 0xff
 
-            swap(sbox, i, j)
+            ja = j >> 2
+            jb = j & 0b11
 
-            res = sbox[i>>2]>>addrByte8 + sbox[j>>2]>>addrByte8
-            res &= 0xff
-            res = res << (3-byteIndex)*8
+            offset = jb*8
+            jbox =  sbox[ja]
+            jbox = jbox >> offset
 
-            index += res
+            swapBytes(sbox, i, i2, ja, jb)
 
-        yield word ^ index
+            acc = jbox + ibox
+            acc &= 0xff
+            offset = i2*8
+
+            acc = acc<<offset
+            xorPattern += acc
+
+        yield word ^ xorPattern
 
 
+def swapBytes(l, i, i2, j, j2):
+    a = l[i]
+    b = l[j]
+
+    offset_a = 8*i2
+    # save the byte i2 from a
+    res_a = a >> offset_a
+    res_a &= 0xff
+    # clear that byte in a
+    mask = 0xff << offset_a
+    mask = ~mask
+    a &= mask
+
+    offset_b = 8*j2
+    res_b = b >> offset_b
+    res_b &= 0xff
+
+    a |= res_b << offset_b
+
+    res_a = res_a << offset_b
+
+    mask = 0xff << offset_b
+    mask = ~mask
+    b &= mask
+
+    b |= res_a << offset_a
+
+    l[i] = a
+    l[j] = b
 
 
-# consumes an iterator, converting it to chunks
+"""
+consumes an iterator, converting it to chunks
+"""
 
 
 def chunks(n, iterarable):
     chunk = []
     for elem in iterarable:
-        if len(chunks) == n:
-            yield chunks
-            chunks = []
-        chunks.append(elem)
+        if len(chunk) == n:
+            yield chunk
+            chunk = []
+        chunk.append(elem)
 
-    if len(chunks) > 0:
-        yield chunks
+    if len(chunk) > 0:
+        yield chunk
 
 
 def fill(l, n, default):
@@ -112,6 +155,7 @@ def word_to_bytes(input):
 
 
 def run_tests():
+
     def to_byte(a, b):
         return int(a+b, 16)
 
@@ -119,15 +163,27 @@ def run_tests():
         s = list(s)
         return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
 
+    cases = ["010203040506070809", "aabbccddeeff0011"]
+    for expected in map(to_bytes, cases):
+        got = bytes_to_words(expected)
+        got = list(word_to_bytes(got))
+
+        if got != expected:
+            print("word/byte transfer")
+            print('got', got)
+            print('expected', expected)
+
     def test(key, input, expected):
         key = to_bytes(key)
         input = to_bytes(input)
         expected = to_bytes(expected)
 
-        got = word_to_bytes(decrypt(s_box(key), input))
+        got = list(word_to_bytes(decrypt(s_box(key), input)))
 
         if (got != expected):
             print("[test failed] expected output didnt match actual output!")
+            print('got', got)
+            print('expected', expected)
             return
 
         print("[test passed]")
