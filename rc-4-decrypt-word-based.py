@@ -53,7 +53,7 @@ def decrypt(sbox, input):
         xorPattern = 0
         for i2 in [3, 2, 1, 0]:
             offset = i2*8
-            ibox =  sbox[i]
+            ibox = sbox[i]
             ibox = ibox >> offset
             j += ibox
             j &= 0xff
@@ -62,7 +62,7 @@ def decrypt(sbox, input):
             jb = j & 0b11
 
             offset = jb*8
-            jbox =  sbox[ja]
+            jbox = sbox[ja]
             jbox = jbox >> offset
 
             swapBytes(sbox, i, i2, ja, jb)
@@ -71,7 +71,7 @@ def decrypt(sbox, input):
             acc &= 0xff
             offset = i2*8
 
-            acc = acc<<offset
+            acc = acc << offset
             xorPattern += acc
 
         yield word ^ xorPattern
@@ -129,19 +129,20 @@ def fill(l, n, default):
     if len(l) >= n:
         return l
     l.append(default)
-    return fill(l, n, default)
+    fill(l, n, default)
 
 
 def bytes_to_words(input):
     # we expect the input to be an array of bytes.
     # This implementation is supposed to treat an input word addressed.
     # therefore we first rewrite the input a little
-    for chunk in chunks(4, input):
+    for c in chunks(4, input):
         # make sure chunk has exactly 4 elements
-        fill(chunk, 4, 0)
-        [a, b, c, d] = chunk
+        fill(c, 4, 0)
+        [a, b, c1, d] = c
 
-        yield a << 24 + b << 16 + c << 8 + d
+        res = (a << 24) + (b << 16) + (c1 << 8) + d
+        yield res
 
 
 def word_to_bytes(input):
@@ -163,15 +164,32 @@ def run_tests():
         s = list(s)
         return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
 
+    def verify(a, b):
+        a = list(a)
+        b = list(b)
+        if a != b:
+            print("got     ", a)
+            print("expected", b)
+        print("verified!")
+
+    print("     Test utility 1")
+    verify(map(list, chunks(2, [0, 0, 0, 0])), [[0, 0], [0, 0]])
+    verify(map(list, chunks(4, [0, 0, 0, 0])), [[0, 0, 0, 0]])
+    verify(bytes_to_words([0, 0, 0, 0xff]), [0xff])
+
+    verify(bytes_to_words([0, 0, 0x8a, 0xff]), [0x8aff])
+
+    verify(bytes_to_words([0xff, 0, 0xff, 0xff]), [0xff00ffff])
+
+    print("     Test utility 2")
     cases = ["010203040506070809", "aabbccddeeff0011"]
     for expected in map(to_bytes, cases):
         got = bytes_to_words(expected)
         got = list(word_to_bytes(got))
+        s = len(expected)
+        got = got[:s]
 
-        if got != expected:
-            print("word/byte transfer")
-            print('got', got)
-            print('expected', expected)
+        verify(got, expected)
 
     def test(key, input, expected):
         key = to_bytes(key)
