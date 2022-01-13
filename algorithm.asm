@@ -12,30 +12,30 @@ const delete_byte_2=-16711681 ;11111111 00000000 11111111 11111111
 const delete_byte_1=16777215 ;00000000 11111111 11111111 11111111
 
 const counter = 255
-get_key: 
+get_key:
     ; richtige Speicheradresse finden
     MAR <- 80
     ; Daten schonmal reinladen
     MDR <- [MAR]
 
     ; i % keylength, je nachdem read-Funktion aufrufen
-    ACCU <- i % 4 
+    ACCU <- i % 4
 
     if ACCU = 0: read_key_4
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : read_key_3
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : read_key_2
-    
+
     ; k <- load key[i % keylength]
     read_key_1
-    
+
 read_key_4:
     MDR <- MDR AND 255
 
-read_key_3: 
+read_key_3:
     MDR <- MDR AND 65280
     MDR <- 0^8@MDR[31..8]
     MDR <- MDR AND 255
@@ -58,20 +58,20 @@ get_Si:
     ACCU = i % 4
 
     if ACCU = 0: read_Si_4
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : read_Si_3
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : read_Si_2
-    
+
     read_Si_1
 
 read_Si_4:
     MDR <- MDR AND 255
     tmp_Si <- MDR
 
-read_Si_3: 
+read_Si_3:
     MDR <- MDR AND 65280
     tmp_Si <- MDR
     MDR <- 0^8@MDR[31..8]
@@ -97,20 +97,20 @@ get_Sj:
     ACCU = j % 4
 
     if ACCU = 0: read_Sj_4
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : read_Sj_3
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : read_Sj_2
-    
+
     read_Sj_1
 
 read_Sj_4:
     MDR <- MDR AND 255
     tmp_Sj <- MDR
 
-read_Sj_3: 
+read_Sj_3:
     MDR <- MDR AND 65280
     tmp_Sj <- MDR
     MDR <- 0^8@MDR[31..8]
@@ -143,13 +143,13 @@ put_Si_into_Sj:
     ACCU = j % 4
 
     if ACCU = 0: write_Sj_4
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : write_Sj_3
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : write_Sj_2
-    
+
     write_Sj_1
 
 write_Sj_4:
@@ -185,13 +185,13 @@ put_Sj_into_Si:
     ACCU = i % 4
 
     if ACCU = 0: write_Si_4
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : write_Si_3
-    
+
     ACCU = ACCU - 1
     if ACCU = 0 : write_Si_2
-    
+
     write_Si_1
 
 write_Si_4:
@@ -234,10 +234,10 @@ for_i_in_0_to_256_wortadressiert:
 
     ; j = j % 256
     j <- j % 256
-    
+
     ; load sBox(j)
     get_Sj
-    
+
     ; bis hierhin sind Chris und Falk gekommen und haben das von gestern überarbeitet
     ;# swap sBox[i with j]
     swap
@@ -245,11 +245,13 @@ for_i_in_0_to_256_wortadressiert:
     ; repeat 256 times
     i <- i + 1
     counter - 1
-    
+
     if counter = 0: decrypt
-    
+
     for_i_in_0_to_256
-    
+
 decrypt:
     ; here we decrypt the final result
+    ; this is to be done after setup of the s-box
 
+    ; for every byte in the input the s-box gets shuffled slightly again.
