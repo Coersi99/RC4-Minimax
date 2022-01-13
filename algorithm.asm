@@ -11,7 +11,10 @@ const delete_byte_3=-65281 ;11111111 11111111 00000000 11111111
 const delete_byte_2=-16711681 ;11111111 00000000 11111111 11111111
 const delete_byte_1=16777215 ;00000000 11111111 11111111 11111111
 
-const counter = 255
+main:
+    counter = 256
+    for_i_in_0_to_256_wortadressiert
+
 get_key:
     ; richtige Speicheradresse finden
     MAR <- 80
@@ -19,7 +22,7 @@ get_key:
     MDR <- [MAR]
 
     ; i % keylength, je nachdem read-Funktion aufrufen
-    ACCU <- i % 4
+    ACCU <- i MOD 4
 
     if ACCU = 0: read_key_4
 
@@ -33,29 +36,30 @@ get_key:
     read_key_1
 
 read_key_4:
-    MDR <- MDR AND 255
+    MDR <- 255 & MDR
 
 read_key_3:
-    MDR <- MDR AND 65280
+    MDR <- 65280 & MDR
     MDR <- 0^8@MDR[31..8]
-    MDR <- MDR AND 255
+
 read_key_2: 
-    MDR <- MDR AND 16711680
-    MDR <- 0^16@MDR[31..8]
-    MDR <- MDR AND 255
+    MDR <- 16711680 & MDR
+    MDR <- 0^16@MDR[31..16]
+
 read_key_1: 
-    MDR <- MDR AND -16777216
-    MDR <- 0^24@MDR[31..8]
-    MDR <- MDR AND 255
+    MDR <- -16777216 & MDR
+    MDR <- 0^24@MDR[31..24]
+
 ////////////////////////////
 get_Si:
-    ; richtige Speicheradresse finden
+    ; richtige Speicheradresse finden und schon einmal zwischenspeichern
     MAR = i / 4
+    tmp_adr <- i / 4
     ; Daten schonmal reinladen
     MDR <- [MAR]
 
     ; richtige Speicherzelle finden, je nachdem read-Funktion aufrufen
-    ACCU = i % 4
+    ACCU = i MOD 4
 
     if ACCU = 0: read_Si_4
 
@@ -68,24 +72,24 @@ get_Si:
     read_Si_1
 
 read_Si_4:
-    MDR <- MDR AND 255
+    MDR <- 255 & MDR
     tmp_Si <- MDR
 
 read_Si_3:
-    MDR <- MDR AND 65280
-    tmp_Si <- MDR
+    MDR <- 65280 & MDR
     MDR <- 0^8@MDR[31..8]
-    MDR <- MDR AND 255
+    tmp_Si <- MDR
+
 read_Si_2: 
-    MDR <- MDR AND 16711680
+    MDR <- 16711680 & MDR
+    MDR <- 0^16@MDR[31..16]
     tmp_Si <- MDR
-    MDR <- 0^16@MDR[31..8]
-    MDR <- MDR AND 255
+
 read_Si_1: 
-    MDR <- MDR AND -16777216
+    MDR <- -16777216 & MDR
+    MDR <- 0^24@MDR[31..24]
     tmp_Si <- MDR
-    MDR <- 0^24@MDR[31..8]
-    MDR <- MDR AND 255
+
 ///////////////////////
 get_Sj:
     ; richtige Speicheradresse finden
@@ -94,7 +98,7 @@ get_Sj:
     MDR <- [MAR]
 
     ; richtige Speicherzelle finden, je nachdem read-Funktion aufrufen
-    ACCU = j % 4
+    ACCU = j MOD 4
 
     if ACCU = 0: read_Sj_4
 
@@ -107,40 +111,58 @@ get_Sj:
     read_Sj_1
 
 read_Sj_4:
-    MDR <- MDR AND 255
+    MDR <- 255 & MDR
     tmp_Sj <- MDR
 
 read_Sj_3:
-    MDR <- MDR AND 65280
-    tmp_Sj <- MDR
+    MDR <- 65280 & MDR
     MDR <- 0^8@MDR[31..8]
-    MDR <- MDR AND 255
+    tmp_Sj <- MDR
     tmp_Si <- tmp_Si[31-8..0]@0^8;auf Stelle 3 verschieben
 
 read_Sj_2: 
-    MDR <- MDR AND 16711680
+    MDR <- 16711680 & MDR
+    MDR <- 0^16@MDR[31..16]
     tmp_Sj <- MDR
-    MDR <- 0^16@MDR[31..8]
-    MDR <- MDR AND 255
     tmp_Si <- tmp_Si[31--16..0]@0^16;auf Stelle 2 verschieben
 
 read_Sj_1: 
-    MDR <- MDR AND -16777216
-    MDR <- 0^24@MDR[31..8]
-    MDR <- MDR AND 255
+    MDR <- -16777216 & MDR
+    MDR <- 0^24@MDR[31..24]
+    tmp_Sj <- MDR
     tmp_Si <- tmp_Si[31-24..0]@0^24;auf Stelle 1 verschieben
-///////////
-swap:
-    
-    put_Si_into_Sj
-    put_Sj_into_Si
+
+///////////////////////
+
+S.L._tmp_Sj:
+    ACCU <- i mod 4
+
+    if ACCU = 0: break
+
+    ACCU = ACCU - 1
+    if ACCU = 0 : S.L._tmp_Sj_8
+
+    ACCU = ACCU - 1
+    if ACCU = 0 : S.L._tmp_Sj_16
+
+    S.L._tmp_Sj_24
+
+S.L._tmp_Sj_8:
+    tmp_Sj <- tmp_Sj[31-8..0]@0^8
+
+S.L._tmp_Sj_16:
+    tmp_Sj <- tmp_Sj[31-16..0]@0^16
+
+S.L._tmp_Sj_24:
+    tmp_Sj <- tmp_Sj[31-24..0]@0^24
+
 ///////
 put_Si_into_Sj:
     ; Daten schonmal reinladen
     MDR <- [MAR]
 
     ; richtige Speicherzelle finden, je nachdem write-Funktion aufrufen
-    ACCU = j % 4
+    ACCU = j MOD 4
 
     if ACCU = 0: write_Sj_4
 
@@ -155,25 +177,25 @@ put_Si_into_Sj:
 write_Sj_4:
 
     MDR <- -256 & MDR ;delete_byte_4
-    MDR <- tmp_Si OR MDR;write tmp_Si in S[j] 
+    MDR <- tmp_Si | MDR;write tmp_Si in S[j] 
     M[MAR] <- MDR 
 
 write_Sj_3:
 
-    MDR <- -65281 AND MDR  ;delete_byte_3
-    MDR <- tmp_Si OR MDR  ;write tmp_Si in S[j] 
+    MDR <- -65281 & MDR  ;delete_byte_3
+    MDR <- tmp_Si | MDR  ;write tmp_Si in S[j] 
     M[MAR] <- MDR 
 
 write_Sj_2:
 
-    MDR <- 16711681 AND MDR;delete_byte_2
-    MDR <- tmp_Si OR MDR;write tmp_Si in S[j] 
+    MDR <- -16711681 & MDR;delete_byte_2
+    MDR <- tmp_Si | MDR;write tmp_Si in S[j] 
     M[MAR] <- MDR 
 
 write_Sj_1:
 
-    MDR <- 16777215 AND MDR;delete_byte_1
-    MDR <- tmp_Si OR MDR;write tmp_Si in S[j] 
+    MDR <- 16777215 & MDR;delete_byte_1
+    MDR <- tmp_Si | MDR;write tmp_Si in S[j] 
     M[MAR] <- MDR 
 //////
 put_Sj_into_Si:
@@ -182,7 +204,7 @@ put_Sj_into_Si:
     MDR <- [MAR]
 
     ; richtige Speicherzelle finden, je nachdem write-Funktion aufrufen
-    ACCU = i % 4
+    ACCU = i MOD 4
 
     if ACCU = 0: write_Si_4
 
@@ -196,31 +218,31 @@ put_Sj_into_Si:
 
 write_Si_4:
 
-    MDR <- -256 AND MDR;delete_byte_4
-    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[i] 
+    MDR <- -256 & MDR;delete_byte_4
+    MDR <- tmp_Sj | MDR;write tmp_Sj in S[i] 
     M[MAR] <- MDR 
 
 write_Si_3:
 
-    MDR <- -65281 AND MDR;delete_byte_3
-    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[i] 
+    MDR <- -65281 & MDR;delete_byte_3
+    MDR <- tmp_Sj | MDR;write tmp_Sj in S[i] 
     M[MAR] <- MDR 
 
 write_Si_2:
 
-    MDR <- -16711681 AND MDR;delete_byte_2
-    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[i] 
+    MDR <- -16711681 & MDR;delete_byte_2
+    MDR <- tmp_Sj | MDR;write tmp_Sj in S[i] 
     M[MAR] <- MDR 
 
 write_Si_1:
 
-    MDR <- 16777215 AND MDR;delete_byte_4
-    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[j] 
+    MDR <- 16777215 & MDR;delete_byte_4
+    MDR <- tmp_Sj | R MDR;write tmp_Sj in S[j] 
     M[MAR] <- MDR 
 
 ////////////////
 
-for_i_in_0_to_256_wortadressiert:
+for_i_in_0_to_256:
 
     ; load k
     get_key
@@ -233,21 +255,21 @@ for_i_in_0_to_256_wortadressiert:
     j <- j + MDR
 
     ; j = j % 256
-    j <- j % 256
+    j <- j MOD 256
 
     ; load sBox(j)
     get_Sj
 
-    ; bis hierhin sind Chris und Falk gekommen und haben das von gestern überarbeitet
     ;# swap sBox[i with j]
-    swap
+    S.L._tmp_Sj
+    put_Si_into_Sj
+    put_Sj_into_Si
 
     ; repeat 256 times
     i <- i + 1
     counter - 1
 
     if counter = 0: decrypt
-
     for_i_in_0_to_256
 
 decrypt:
