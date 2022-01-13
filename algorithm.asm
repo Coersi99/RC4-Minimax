@@ -37,13 +37,16 @@ read_key_4:
 
 read_key_3: 
     MDR <- MDR AND 65280
-    MDR <- MDR[31]^8@MDR[31..8]
+    MDR <- 0^8@MDR[31..8]
+    MDR <- MDR AND 255
 read_key_2: 
     MDR <- MDR AND 16711680
-    MDR <- MDR[31]^16@MDR[31..16]
+    MDR <- 0^16@MDR[31..8]
+    MDR <- MDR AND 255
 read_key_1: 
     MDR <- MDR AND -16777216
-    MDR <- MDR[31]^24@MDR[31..24]
+    MDR <- 0^24@MDR[31..8]
+    MDR <- MDR AND 255
 ////////////////////////////
 get_Si:
     ; richtige Speicheradresse finden
@@ -66,20 +69,23 @@ get_Si:
 
 read_Si_4:
     MDR <- MDR AND 255
-    tmp_data <- MDR
+    tmp_Si <- MDR
 
 read_Si_3: 
     MDR <- MDR AND 65280
-    tmp_data <- MDR
-    MDR <- MDR[31]^8@MDR[31..8]
+    tmp_Si <- MDR
+    MDR <- 0^8@MDR[31..8]
+    MDR <- MDR AND 255
 read_Si_2: 
     MDR <- MDR AND 16711680
-    tmp_data <- MDR
-    MDR <- MDR[31]^16@MDR[31..16]
+    tmp_Si <- MDR
+    MDR <- 0^16@MDR[31..8]
+    MDR <- MDR AND 255
 read_Si_1: 
     MDR <- MDR AND -16777216
-    tmp_data <- MDR
-    MDR <- MDR[31]^24@MDR[31..24]
+    tmp_Si <- MDR
+    MDR <- 0^24@MDR[31..8]
+    MDR <- MDR AND 255
 ///////////////////////
 get_Sj:
     ; richtige Speicheradresse finden
@@ -102,26 +108,34 @@ get_Sj:
 
 read_Sj_4:
     MDR <- MDR AND 255
-    tmp_j <- MDR
+    tmp_Sj <- MDR
 
 read_Sj_3: 
     MDR <- MDR AND 65280
-    tmp_j <- MDR
-    MDR <- MDR[31]^8@MDR[31..8]
+    tmp_Sj <- MDR
+    MDR <- 0^8@MDR[31..8]
+    MDR <- MDR AND 255
+    tmp_Si <- tmp_Si[31-8..0]@0^8;auf Stelle 3 verschieben
+
 read_Sj_2: 
     MDR <- MDR AND 16711680
-    tmp_j <- MDR
-    MDR <- MDR[31]^16@MDR[31..16]
+    tmp_Sj <- MDR
+    MDR <- 0^16@MDR[31..8]
+    MDR <- MDR AND 255
+    tmp_Si <- tmp_Si[31--16..0]@0^16;auf Stelle 2 verschieben
+
 read_Sj_1: 
     MDR <- MDR AND -16777216
-    MDR <- MDR[31]^24@MDR[31..24]
+    MDR <- 0^24@MDR[31..8]
+    MDR <- MDR AND 255
+    tmp_Si <- tmp_Si[31-24..0]@0^24;auf Stelle 1 verschieben
 ///////////
 swap:
-    ;status quo: Daten von S[i] in tmp_data, tmp_adr ist Adresse von S[i], Daten von S[j] in MDR, MAR ist Adresse von S[j]
-    put_si_into_sj
-    put_sj_into_si
+    
+    put_Si_into_Sj
+    put_Sj_into_Si
 ///////
-put_si_into_sj:
+put_Si_into_Sj:
     ; Daten schonmal reinladen
     MDR <- [MAR]
 
@@ -140,29 +154,29 @@ put_si_into_sj:
 
 write_Sj_4:
 
-    MDR <- MDR AND -256 ;delete_byte_4
-    MDR <- MDR OR tmp_i ;write tmp_i in S[j] 
-    [MAR] <- MDR 
+    MDR <- -256 & MDR ;delete_byte_4
+    MDR <- tmp_Si OR MDR;write tmp_Si in S[j] 
+    M[MAR] <- MDR 
 
 write_Sj_3:
 
-    MDR <- MDR AND -65281 ;delete_byte_3
-    MDR <- MDR OR tmp_i ;write tmp_i in S[j] 
-    [MAR] <- MDR 
+    MDR <- -65281 AND MDR  ;delete_byte_3
+    MDR <- tmp_Si OR MDR  ;write tmp_Si in S[j] 
+    M[MAR] <- MDR 
 
 write_Sj_2:
 
-    MDR <- MDR AND -16711681 ;delete_byte_2
-    MDR <- MDR OR tmp_i ;write tmp_i in S[j] 
-    [MAR] <- MDR 
+    MDR <- 16711681 AND MDR;delete_byte_2
+    MDR <- tmp_Si OR MDR;write tmp_Si in S[j] 
+    M[MAR] <- MDR 
 
 write_Sj_1:
 
-    MDR <- MDR AND 16777215 ;delete_byte_1
-    MDR <- MDR OR tmp_i ;write tmp_i in S[j] 
-    [MAR] <- MDR 
+    MDR <- 16777215 AND MDR;delete_byte_1
+    MDR <- tmp_Si OR MDR;write tmp_Si in S[j] 
+    M[MAR] <- MDR 
 //////
-put_sj_into_si:
+put_Sj_into_Si:
     ; Daten schonmal reinladen
     MAR <- tmp_adr
     MDR <- [MAR]
@@ -182,27 +196,27 @@ put_sj_into_si:
 
 write_Si_4:
 
-    MDR <- MDR AND -256 ;delete_byte_4
-    MDR <- MDR OR tmp_j ;write tmp_j in S[i] 
-    [MAR] <- MDR 
+    MDR <- -256 AND MDR;delete_byte_4
+    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[i] 
+    M[MAR] <- MDR 
 
 write_Si_3:
 
-    MDR <- MDR AND -65281 ;delete_byte_3
-    MDR <- MDR OR tmp_j ;write tmp_j in S[i] 
-    [MAR] <- MDR 
+    MDR <- -65281 AND MDR;delete_byte_3
+    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[i] 
+    M[MAR] <- MDR 
 
 write_Si_2:
 
-    MDR <- MDR AND -16711681 ;delete_byte_2
-    MDR <- MDR OR tmp_j ;write tmp_j in S[i] 
-    [MAR] <- MDR 
+    MDR <- -16711681 AND MDR;delete_byte_2
+    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[i] 
+    M[MAR] <- MDR 
 
 write_Si_1:
 
-    MDR <- MDR AND 16777215 ;delete_byte_4
-    MDR <- MDR OR tmp_j ;write tmp_j in S[j] 
-    [MAR] <- MDR 
+    MDR <- 16777215 AND MDR;delete_byte_4
+    MDR <- tmp_Sj OR MDR;write tmp_Sj in S[j] 
+    M[MAR] <- MDR 
 
 ////////////////
 
