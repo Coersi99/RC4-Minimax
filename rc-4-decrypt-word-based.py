@@ -103,6 +103,7 @@ def swapBytes(l, i, i2, j, j2):
 
         # write buffer
         l[i] = bytes
+        return
 
 
     a = l[i]
@@ -179,10 +180,13 @@ def word_to_bytes(input):
 # this is just used as a test function
 
 
-def verify(a, b):
+def verify(a, b, hexPrint=False):
     a = list(a)
     b = list(b)
     if a != b:
+        if hexPrint:
+            a = list(map(hex, a))
+            b = list(map(hex, b))
         print("got     ", a)
         print("expected", b)
     else:
@@ -200,24 +204,25 @@ def verifySwapByte():
 
     # direct testing
     verify(
-        swapBytesC([0x01020304], 0, 0, 0, 3*8)
-        [0x04020401]
+        swapBytesC([0x01020304], 0, 0, 0, 3*8),
+        [0x04020301],
+        True
     )
     verify(
-        swapBytesC([0x01020304, 0x01020304], 0, 0, 0, 3*8)
-        [0x04020401, 0x01020304]
+        swapBytesC([0x01020304, 0x01020304], 0, 0, 0, 3*8),
+        [0x04020301, 0x01020304], True
     )
     verify(
-        swapBytesC([0x01020304, 0x01020304], 0, 1*8, 0, 3*8)
-        [0x01040302, 0x01020304]
+        swapBytesC([0x01020304, 0x01020304], 0, 1*8, 0, 3*8),
+        [0x01040302, 0x01020304], True
     )
     verify(
-        swapBytesC([0x01020304, 0x05060708], 0, 0, 1, 0)
-        [0x05020304, 0x01060708]
+        swapBytesC([0x01020304, 0x05060708], 0, 0, 1, 0),
+        [0x05020304, 0x01060708], True
     )
     verify(
-        swapBytesC([0x01020304, 0x05060708], 0, 3*8, 1, 2*8)
-        [0x01020307, 0x05060408]
+        swapBytesC([0x01020304, 0x05060708], 0, 3*8, 1, 2*8),
+        [0x01020307, 0x05060408], True
     )
     
     # TODO delete, though I just dont know, if the remaining test cases are written well enough
