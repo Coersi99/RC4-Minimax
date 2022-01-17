@@ -217,6 +217,10 @@ def verifySwapByte():
         [0x01040302, 0x01020304], True
     )
     verify(
+        swapBytesC([0xf1020304, 0x01020304], 0, 1*8, 0, 3*8),
+        [0xf1040302, 0x01020304], True
+    )
+    verify(
         swapBytesC([0x01020304, 0x05060708], 0, 0, 1, 0),
         [0x05020304, 0x01060708], True
     )
