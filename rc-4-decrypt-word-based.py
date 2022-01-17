@@ -78,6 +78,33 @@ def decrypt(sbox, input):
 
 
 def swapBytes(l, i, i2, j, j2):
+    if i == j:
+        bytes = l[i]
+        a = bytes >> i2
+        a &= 0xff
+        a = a << j2
+
+        b = bytes >> j2
+        b &= 0xff
+        b = b << i2
+
+        a = a | b
+
+        mask = 0xff <<i2
+        tmp = 0xff << j2
+        mask = mask | tmp
+        mask = ~mask
+
+        # clear bytes a and b in buffer
+        bytes = bytes & mask
+
+        # set bytes a and b
+        bytes = bytes | a
+
+        # write buffer
+        l[i] = bytes
+
+
     a = l[i]
     b = l[j]
 
@@ -101,7 +128,6 @@ def swapBytes(l, i, i2, j, j2):
 
     b |= res_a << i2
 
-    # IF i == j THEN changes will be overwritten!
     l[i] = a
     l[j] = b
 
