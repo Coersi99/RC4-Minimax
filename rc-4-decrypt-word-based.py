@@ -60,6 +60,7 @@ def decrypt(sbox, input):
 
             j1 = j >> 2
             j2 = j & 0b11
+            j2 = 24 - j2
             j2 *= 8
 
             jbox = sbox[j1]
@@ -100,6 +101,7 @@ def swapBytes(l, i, i2, j, j2):
 
     b |= res_a << i2
 
+    # IF i == j THEN changes will be overwritten!
     l[i] = a
     l[j] = b
 
@@ -150,6 +152,7 @@ def word_to_bytes(input):
 
 # this is just used as a test function
 
+
 def verify(a, b):
     a = list(a)
     b = list(b)
@@ -159,27 +162,63 @@ def verify(a, b):
     else:
         print("checked!")
 
+
 def verifySwapByte():
+    # swap bytes cloning
+    # also make the indexes of i2 and j2 reverse ordered
+    def swapBytesC(l, i1, i2, j1, j2):
+        # clone list
+        lnew = list(l)
+        swapBytes(lnew, i1, 24-i2, j1, 24-j2)
+        return lnew
+
+    # direct testing
+    verify(
+        swapBytesC([0x01020304], 0, 0, 0, 3*8)
+        [0x04020401]
+    )
+    verify(
+        swapBytesC([0x01020304, 0x01020304], 0, 0, 0, 3*8)
+        [0x04020401, 0x01020304]
+    )
+    verify(
+        swapBytesC([0x01020304, 0x01020304], 0, 1*8, 0, 3*8)
+        [0x01040302, 0x01020304]
+    )
+    verify(
+        swapBytesC([0x01020304, 0x05060708], 0, 0, 1, 0)
+        [0x05020304, 0x01060708]
+    )
+    verify(
+        swapBytesC([0x01020304, 0x05060708], 0, 3*8, 1, 2*8)
+        [0x01020307, 0x05060408]
+    )
+    
+    # TODO delete, though I just dont know, if the remaining test cases are written well enough
+    return
+
+    # more automatic solution
     cases = [
-        [ [1, 2, 3, 4], 1, 2 ],
-        [ [1, 2, 3, 4], 0, 2 ],
-        [ [1, 2, 3, 4], 3, 2 ],
-        [ [1, 2, 3, 4, 5, 6, 7, 8], 3, 2 ],
-        [ [1, 2, 3, 4, 5, 6, 7, 8], 6, 1 ],
-        [ [1, 2, 3, 4, 5, 6, 7, 8], 2, 7 ],
+        [[1, 2, 3, 4], 1, 2],
+        [[1, 2, 3, 4], 0, 2],
+        [[1, 2, 3, 4], 3, 2],
+        [[1, 2, 3, 4, 5, 6, 7, 8], 3, 2],
+        [[1, 2, 3, 4, 5, 6, 7, 8], 6, 1],
+        [[1, 2, 3, 4, 5, 6, 7, 8], 2, 7],
     ]
 
     for [l, a, b] in cases:
         bytes = list(bytes_to_words(l))
         a1 = a >> 2
-        a2 = (a&3)*8
+        a2 = (a & 3)*8
         b1 = b >> 2
-        b2 = (b&3)*8
+        b2 = (b & 3)*8
         swapBytes(bytes, a1, a2, b1, b2)
         got = list(word_to_bytes(bytes))
         swap(l, a, b)
 
         verify(l, got)
+
 
 def run_tests():
 
@@ -190,18 +229,21 @@ def run_tests():
         s = list(s)
         return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
 
-    print("     Test utility 1")
+    print("     Test chunks")
     verify(map(list, chunks(2, [0, 0, 0, 0])), [[0, 0], [0, 0]])
     verify(map(list, chunks(4, [0, 0, 0, 0])), [[0, 0, 0, 0]])
+    print("     Test bytes_to_words")
     verify(bytes_to_words([0, 0, 0, 0xff]), [0xff])
-
     verify(bytes_to_words([0, 0, 0x8a, 0xff]), [0x8aff])
     verify(bytes_to_words([0xff, 0, 0xff, 0xff]), [0xff00ffff])
+    print("     Test words_to_bytes")
+    verify(word_to_bytes([0x01020304, 0x05060708, 0x0000090A]), [
+           1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 9, 10])
 
     print("     Test swapByte")
     verifySwapByte()
 
-    print("     Test utility 2")
+    print("     Test implementation")
     cases = ["010203040506070809", "aabbccddeeff0011"]
     for expected in map(to_bytes, cases):
         got = bytes_to_words(expected)
