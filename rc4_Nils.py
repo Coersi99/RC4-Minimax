@@ -45,7 +45,6 @@ class Rc4:
         index &= 255
 
         s = self.state[index]
-        # print(hex(s))
         return s
 
     def decrypt(self, input):

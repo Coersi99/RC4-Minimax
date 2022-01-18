@@ -100,10 +100,20 @@ def decrypt(sbox, input):
             index &= 0xff
             # index is verified to be right
 
-            # move the xorbyte to the appropriate position in the index
-            # xorbyte = xorbyte << i2
+            # xorPattern |= self.state[index] << i2
+            index1 = index >> 2
+            index2 = index & 0b11
+            index2 *= 8
+            index2 = 24 - index2
 
-            # xorPattern |= xorbyte
+            box = sbox[index1]
+            box >>= index2
+            box &= 0xff
+            # box is verified to be correct
+            
+            # move box to the right position
+            box <<= i2
+            xorPattern |= box
 
         yield word ^ xorPattern
 
