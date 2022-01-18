@@ -43,7 +43,7 @@ class Rc4:
         # calulate index of element to return
         index = self.state[self.i]+self.state[self.j]
         index &= 255
-        # print(hex(index))
+
         s = self.state[index]
         # print(hex(s))
         return s

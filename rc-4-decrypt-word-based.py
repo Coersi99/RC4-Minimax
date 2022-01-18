@@ -40,6 +40,9 @@ def prga_next(self):
     # calulate index of element to return
     index = self.state[self.i]+self.state[self.j]
     index &= 255
+
+    # algorithm verified until here
+
     return self.state[index]
 
 
@@ -58,6 +61,8 @@ def decrypt(sbox, input):
             i += 1
             i &= 0xff
 
+            # i1 is the address part of i
+            # while i2 is the byte address of i
             i1 = i >> 2
             i2 = i & 0b11
             i2 *= 8
@@ -65,12 +70,14 @@ def decrypt(sbox, input):
 
             ibox = sbox[i1]
             ibox = ibox >> i2
+            # i box is verified to be correct
 
             # add sbox[i][i2] to j
             # self.j += self.state[self.i]
             # self.j &= 0xff
             j += ibox
             j &= 0xff
+            # j is verified to be correct
 
             # split j into the address j1 and the byte address j2
             j1 = j >> 2
@@ -80,19 +87,23 @@ def decrypt(sbox, input):
 
             jbox = sbox[j1]
             jbox = jbox >> j2
+            # (jbox & 0xff) is verified to be correct
 
             # swap(self.state, self.i, self.j)
             swapBytes(sbox, i1, i2, j1, j2)
 
-            xorbyte = jbox + ibox
-            xorbyte &= 0xff
+            # calulate index of element to return
+            # index = ibox + jbox
+            # index &= 255
 
-            # print(hex(xorbyte))
+            index = jbox + ibox
+            index &= 0xff
+            # index is verified to be right
 
             # move the xorbyte to the appropriate position in the index
-            xorbyte = xorbyte << i2
+            # xorbyte = xorbyte << i2
 
-            xorPattern |= xorbyte
+            # xorPattern |= xorbyte
 
         yield word ^ xorPattern
 
