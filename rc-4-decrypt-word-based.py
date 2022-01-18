@@ -112,6 +112,7 @@ def decrypt(sbox, input):
             # box is verified to be correct
             
             # move box to the right position
+            # TODO problem is that every nth byte is wrong because of the offset shift
             box <<= i2
             xorPattern |= box
 
