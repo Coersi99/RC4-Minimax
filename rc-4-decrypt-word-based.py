@@ -1,4 +1,7 @@
 
+from re import A
+
+
 def swap(list, i, j):
     a = list[i]
     b = list[j]
@@ -79,6 +82,8 @@ def decrypt(sbox, input):
 
 def swapBytes(l, i, i2, j, j2):
     if i == j:
+        if i2 == j2:
+            return
         bytes = l[i]
         a = bytes >> i2
         a &= 0xff
@@ -90,7 +95,7 @@ def swapBytes(l, i, i2, j, j2):
 
         a = a | b
 
-        mask = 0xff <<i2
+        mask = 0xff << i2
         tmp = 0xff << j2
         mask = mask | tmp
         mask = ~mask
@@ -105,39 +110,40 @@ def swapBytes(l, i, i2, j, j2):
         l[i] = bytes
         return
 
-
     a = l[i]
     b = l[j]
 
-    res_a = a >> i2
-    res_a &= 0xff
-    # clear that byte in a
+    # save addressed bytes from i and j into variables
+    byte_a = a >> i2
+    byte_a &= 0xff
+
+    byte_b = b >> j2
+    byte_b &= 0xff
+
+    # clear the byte at address i,i2 in a
     mask = 0xff << i2
     mask = ~mask
     a &= mask
 
-    res_b = b >> j2
-    res_b &= 0xff
-
-    a |= res_b << j2
-
-    res_a = res_a << j2
-
+    # clear the byte at address j,j2 in b
     mask = 0xff << j2
     mask = ~mask
     b &= mask
 
-    b |= res_a << i2
+    # move the bytes at the appropriate positions
+    byte_a <<= j2
+    byte_b <<= i2
 
+    # apply the bitpatterns to a and b
+    a |= byte_b
+    b |= byte_a
+
+    # write back result
     l[i] = a
     l[j] = b
 
 
-"""
-consumes an iterator, converting it to chunks
-"""
-
-
+# consumes an iterator, converting it to chunks
 def chunks(n, iterarable):
     chunk = []
     for elem in iterarable:
@@ -203,6 +209,8 @@ def verifySwapByte():
         return lnew
 
     # direct testing
+
+    # same subslice
     verify(
         swapBytesC([0x01020304], 0, 0, 0, 3*8),
         [0x04020301],
@@ -220,6 +228,8 @@ def verifySwapByte():
         swapBytesC([0xf1020304, 0x01020304], 0, 1*8, 0, 3*8),
         [0xf1040302, 0x01020304], True
     )
+
+    # i != j
     verify(
         swapBytesC([0x01020304, 0x05060708], 0, 0, 1, 0),
         [0x05020304, 0x01060708], True
@@ -228,7 +238,7 @@ def verifySwapByte():
         swapBytesC([0x01020304, 0x05060708], 0, 3*8, 1, 2*8),
         [0x01020307, 0x05060408], True
     )
-    
+
     # TODO delete, though I just dont know, if the remaining test cases are written well enough
     return
 
