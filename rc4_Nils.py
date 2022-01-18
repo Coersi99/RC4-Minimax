@@ -49,15 +49,16 @@ class Rc4:
         return [i ^ self.prga_next() for i in input]
 
 
-# this is just used as a test function
-def run_tests():
+
+def to_bytes(s):
     def to_byte(a, b):
         return int(a+b, 16)
 
-    def to_bytes(s):
-        s = list(s)
-        return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
+    s = list(s)
+    return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
 
+# this is just used as a test function
+def run_tests():
     def test(key, input, expected):
         key = to_bytes(key)
         input = to_bytes(input)
@@ -88,3 +89,12 @@ def run_tests():
     )
 
 run_tests()
+
+
+# input is expected to be a string where 2 characters make a byte
+# key also is expected to be a string where 2 characters make a byte
+def decryptRC4(input, key):
+    key = to_bytes(key)
+    input = to_bytes(input)
+
+    return Rc4(key).decrypt(input)

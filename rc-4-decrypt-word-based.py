@@ -59,14 +59,13 @@ def decrypt(sbox, input):
             ibox = sbox[i]
             ibox = ibox >> i2
 
-            # TODO this doesnt look right
             j += ibox
             j &= 0xff
 
             j1 = j >> 2
             j2 = j & 0b11
-            j2 = 24 - j2
             j2 *= 8
+            j2 = 24 - j2
 
             jbox = sbox[j1]
             jbox = jbox >> j2
@@ -241,9 +240,6 @@ def verifySwapByte():
         [0x01020307, 0x05060408], True
     )
 
-    # TODO delete, though I just dont know, if the remaining test cases are written well enough
-    return
-
     # more automatic solution
     cases = [
         [[1, 2, 3, 4], 1, 2],
@@ -257,9 +253,9 @@ def verifySwapByte():
     for [l, a, b] in cases:
         bytes = list(bytes_to_words(l))
         a1 = a >> 2
-        a2 = (a & 3)*8
+        a2 = 24- (a & 3)*8
         b1 = b >> 2
-        b2 = (b & 3)*8
+        b2 = 24- (b & 3)*8
         swapBytes(bytes, a1, a2, b1, b2)
         got = list(word_to_bytes(bytes))
         swap(l, a, b)
