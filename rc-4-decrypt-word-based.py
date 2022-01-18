@@ -58,6 +58,8 @@ def decrypt(sbox, input):
         for i2 in [24, 16, 8, 0]:
             ibox = sbox[i]
             ibox = ibox >> i2
+
+            # TODO this doesnt look right
             j += ibox
             j &= 0xff
 
