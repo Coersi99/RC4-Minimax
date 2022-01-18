@@ -112,7 +112,11 @@ def decrypt(sbox, input):
             # box is verified to be correct
             
             # move box to the right position
-            # TODO problem is that every nth byte is wrong because of the offset shift
+            # PROBLEM: the first byte (i2 ==24) needs to be at pos: 0. Every other i2 => i2+8
+            i2 += 8
+            if i2 == 32:
+                i2 = 0
+
             box <<= i2
             xorPattern |= box
 
