@@ -33,7 +33,7 @@ def prga_next(self):
     self.i += 1
     self.i &= 0xff
     self.j += self.state[self.i]
-    self.j &= 255
+    self.j &= 0xff
 
     swap(self.state, self.i, self.j)
 
@@ -50,18 +50,19 @@ def decrypt(sbox, input):
     words = bytes_to_words(input)
 
     for word in words:
-        i += 1
-        i &= (0xff >> 2)
-
         xorPattern = 0
 
         for i2 in [24, 16, 8, 0]:
             ibox = sbox[i]
             ibox = ibox >> i2
 
+            # add sbox[i][i2] to j
+            # self.j += self.state[self.i]
+            # self.j &= 0xff
             j += ibox
             j &= 0xff
 
+            # split j into the address j1 and the byte address j2
             j1 = j >> 2
             j2 = j & 0b11
             j2 *= 8
@@ -70,13 +71,21 @@ def decrypt(sbox, input):
             jbox = sbox[j1]
             jbox = jbox >> j2
 
+            # swap(self.state, self.i, self.j)
             swapBytes(sbox, i, i2, j1, j2)
 
-            acc = jbox + ibox
-            acc &= 0xff
-            acc = acc << i2
+            xorbyte = jbox + ibox
+            xorbyte &= 0xff
 
-            xorPattern |= acc
+            # print(hex(xorbyte))
+
+            # move the xorbyte to the appropriate position in the index
+            xorbyte = xorbyte << i2
+
+            xorPattern |= xorbyte
+
+        i += 1
+        i &= (0xff >> 2)
 
         yield word ^ xorPattern
 
@@ -311,16 +320,21 @@ def run_tests():
 
         print("[test passed]")
 
+    print("     Test 1")
     test(
         key="0102030405",
         input="00000000000000000000000000000000",
         expected="b2396305f03dc027ccc3524a0a1118a8"
     )
+
+    print("     Test 2")
     test(
         key="01020304050607",
         input="00000000000000000000000000000000",
         expected="293f02d47f37c9b633f2af5285feb46b"
     )
+
+    print("     Test 3")
     test(
         key="0102030405060708",
         input="00000000000000000000000000000000",

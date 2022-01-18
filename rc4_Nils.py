@@ -43,7 +43,11 @@ class Rc4:
         # calulate index of element to return
         index = self.state[self.i]+self.state[self.j]
         index &= 255
-        return self.state[index]
+        # print(hex(index))
+        s = self.state[index]
+
+        # print(hex(s))
+        return s
 
     def decrypt(self, input):
         return [i ^ self.prga_next() for i in input]
@@ -72,21 +76,28 @@ def run_tests():
 
         print("[test passed]")
 
+    print("     Test 1")
     test(
         key="0102030405",
         input="00000000000000000000000000000000",
         expected="b2396305f03dc027ccc3524a0a1118a8"
     )
+
+    print("     Test 2")
     test(
         key="01020304050607",
         input="00000000000000000000000000000000",
         expected="293f02d47f37c9b633f2af5285feb46b"
     )
+
+    print("     Test 3")
     test(
         key="0102030405060708",
         input="00000000000000000000000000000000",
         expected="97ab8a1bf0afb96132f2f67258da15a8"
     )
+
+
 
 run_tests()
 
