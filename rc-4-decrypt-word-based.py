@@ -49,11 +49,21 @@ def decrypt(sbox, input):
     sbox = list(bytes_to_words(sbox))
     words = bytes_to_words(input)
 
+
+    wordIndex = 0
     for word in words:
         xorPattern = 0
+        # -1 here, so we include the 0
+        for loopIndex in range(0, 4):
+            i += 1
+            i &= 0xff
 
-        for i2 in [24, 16, 8, 0]:
-            ibox = sbox[i]
+            i1 = i >> 2
+            i2 = i & 0b11
+            i2 *= 8
+            i2 = 24 - i2
+
+            ibox = sbox[i1]
             ibox = ibox >> i2
 
             # add sbox[i][i2] to j
@@ -72,7 +82,7 @@ def decrypt(sbox, input):
             jbox = jbox >> j2
 
             # swap(self.state, self.i, self.j)
-            swapBytes(sbox, i, i2, j1, j2)
+            swapBytes(sbox, i1, i2, j1, j2)
 
             xorbyte = jbox + ibox
             xorbyte &= 0xff
@@ -83,9 +93,6 @@ def decrypt(sbox, input):
             xorbyte = xorbyte << i2
 
             xorPattern |= xorbyte
-
-        i += 1
-        i &= (0xff >> 2)
 
         yield word ^ xorPattern
 

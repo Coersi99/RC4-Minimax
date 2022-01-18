@@ -45,7 +45,6 @@ class Rc4:
         index &= 255
         # print(hex(index))
         s = self.state[index]
-
         # print(hex(s))
         return s
 
