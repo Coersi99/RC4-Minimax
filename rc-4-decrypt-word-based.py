@@ -75,7 +75,7 @@ def decrypt(sbox, input):
             acc &= 0xff
             acc = acc << i2
 
-            xorPattern += acc
+            xorPattern |= acc
 
         yield word ^ xorPattern
 
