@@ -292,6 +292,9 @@ decrypt_setup:
     i <- 0
     j <- 0
 
+    ; NOTE: if we could, we can replace wordIndex.
+    ; i don't care all that much
+
     ; set wordIndex to be the length of the input
     ; when wordIndex is 0, we stop iterating
     wordIndex = INPUT_LENGTH
@@ -457,10 +460,40 @@ swap_same_word:
     ; return 
 swap_byte_end:
     ; ibox, i1, i2, j1, j2 are no longer needed
-    
+
+    ; we fetch the word at `index` and extract the byte
+    ; it's going to become part of the bytepattern we use to xor
+    MAR = index >> 2
+    ibox = MDR[MAR]
+
+    ; extract the byte position from index
+    index = index & 0b11; 0b11 === 3
+    index = index * 8
+    index = 24 - index
+
+    ; single out the byte we want from the word
+    ibox = ibox >> index
+    ibox = ibox & 0xff
+
+    ; apply the byte to the 4 byte xor pattern
+    ibox = ibox << loopIndex
+    pattern = pattern | ibox
 
     ;   -----------------------------
-    ;   --- check loop conditions ---
+    ;   --- check inner loop conditions ---
+    if loopIndex === 0: jump perform_xor:
+    jump: decrypt_loop_inner:
+
+perform_xor:
+    ; xor 4 bytes at once, by leveraging word based instructions
+    ACCU = i >> 2
+    MAR = INPUT_ADDR + i
+    ACCU = MDR[MAR]
+    ACCU = ACCU xor pattern
+    MDR[MAR] = ACCU
+    
+    ;   -----------------------------
+    ;   --- check outer loop conditions ---
 
     ; decrement wordIndex
     wordIndex = wordIndex - 1

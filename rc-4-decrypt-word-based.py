@@ -100,12 +100,13 @@ def decrypt(sbox, input):
             # swap(self.state, self.i, self.j)
             swapBytes(sbox, i1, i2, j1, j2)
 
-            index1 = index >> 2
+            indexAddr = index >> 2
+            ibox = sbox[indexAddr]
+
             index = index & 0b11
             index *= 8
             index = 24 - index
 
-            ibox = sbox[index1]
             ibox >>= index
             ibox &= 0xff
             # box is verified to be correct
