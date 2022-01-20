@@ -46,14 +46,19 @@ def prga_next(self):
     return self.state[index]
 
 
+# tmp_adr
+# tmp_Si
+# tmp_Sj
+# i
+# j
+
 def decrypt(sbox, input):
-    i = 0
-    j = 0
     sbox = list(bytes_to_words(sbox))
     words = bytes_to_words(input)
 
 
-    wordIndex = 0
+    i = 0
+    j = 0
     for word in words:
         xorPattern = 0
         # -1 here, so we include the 0
@@ -85,49 +90,42 @@ def decrypt(sbox, input):
             j2 *= 8
             j2 = 24 - j2
 
-            jbox = sbox[j1]
-            jbox = jbox >> j2
+            index = sbox[j1]
+            index = index >> j2
             # (jbox & 0xff) is verified to be correct
+
+            index = index + ibox
+            index &= 0xff
 
             # swap(self.state, self.i, self.j)
             swapBytes(sbox, i1, i2, j1, j2)
 
-            # calulate index of element to return
-            # index = ibox + jbox
-            # index &= 255
-
-            index = jbox + ibox
-            index &= 0xff
-            # index is verified to be right
-
-            # xorPattern |= self.state[index] << i2
             index1 = index >> 2
-            index2 = index & 0b11
-            index2 *= 8
-            index2 = 24 - index2
+            index = index & 0b11
+            index *= 8
+            index = 24 - index
 
-            box = sbox[index1]
-            box >>= index2
-            box &= 0xff
+            ibox = sbox[index1]
+            ibox >>= index
+            ibox &= 0xff
             # box is verified to be correct
             
             # move box to the right position
-            # PROBLEM: the first byte (i2 ==24) needs to be at pos: 0. Every other i2 => i2+8
-            i2 += 8
-            if i2 == 32:
-                i2 = 0
+            # This is not needed in the asm version, as we count 24, 16, 8, 0 anyway
+            loopIndex = (3-loopIndex)
+            loopIndex *= 8
 
-            box <<= i2
-            xorPattern |= box
+            ibox <<= loopIndex
+            xorPattern |= ibox
 
         yield word ^ xorPattern
 
 
-def swapBytes(l, i, i2, j, j2):
-    if i == j:
+def swapBytes(l, i1, i2, j1, j2):
+    if i1 == j1:
         if i2 == j2:
             return
-        bytes = l[i]
+        bytes = l[i1]
         a = bytes >> i2
         a &= 0xff
         a = a << j2
@@ -138,8 +136,9 @@ def swapBytes(l, i, i2, j, j2):
 
         a = a | b
 
-        mask = 0xff << i2
+
         tmp = 0xff << j2
+        mask = 0xff << i2
         mask = mask | tmp
         mask = ~mask
 
@@ -150,41 +149,36 @@ def swapBytes(l, i, i2, j, j2):
         bytes = bytes | a
 
         # write buffer
-        l[i] = bytes
+        l[i1] = bytes
         return
 
-    a = l[i]
-    b = l[j]
+    a = l[i1]
 
     # save addressed bytes from i and j into variables
-    byte_a = a >> i2
-    byte_a &= 0xff
+    a = a >> i2
+    a &= 0xff
+    a = a << j2
 
-    byte_b = b >> j2
-    byte_b &= 0xff
+    b = l[j1]
+    b = b >> j2
+    b &= 0xff
+    b = b << i2
 
-    # clear the byte at address i,i2 in a
     mask = 0xff << i2
     mask = ~mask
-    a &= mask
+    word = l[i1]
+    # clear byte and set it
+    word = word & mask
+    word = word | b
+    l[i1] = word
 
-    # clear the byte at address j,j2 in b
     mask = 0xff << j2
     mask = ~mask
-    b &= mask
-
-    # move the bytes at the appropriate positions
-    byte_a <<= j2
-    byte_b <<= i2
-
-    # apply the bitpatterns to a and b
-    a |= byte_b
-    b |= byte_a
-
-    # write back result
-    l[i] = a
-    l[j] = b
-
+    word = l[j1]
+    # clear byte and set it
+    word = word & mask
+    word = word | a
+    l[j1] = word
 
 # consumes an iterator, converting it to chunks
 def chunks(n, iterarable):
