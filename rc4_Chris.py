@@ -73,21 +73,23 @@ def main():
 
     cipherfile = open("data_encrypted", "rb")
     ciphertext = cipherfile.read()
-    #print(ciphertext)
+    print(ciphertext)
+    ciphertext = [c for c in ciphertext]
+    print(ciphertext)
 
-    keyfile = open("key", "rb")
-    key = keyfile.read()
+    #keyfile = open("key", "rb")
+    #key = keyfile.read()
     #print(key)
 
-    decrypted = decrypt(key, ciphertext)
-    print('Plaintext:', decrypted)
+    #decrypted = decrypt(key, ciphertext)
+    #print('Plaintext:', decrypted)
     
     #Enable this to write bytes into file named "result.txt"
     #result = open("result.txt", "wb")
     #result.write(decrypted)
     #result.close()
     cipherfile.close()
-    keyfile.close()
+    #keyfile.close()
 
 
 if __name__ == '__main__':
