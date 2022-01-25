@@ -396,9 +396,12 @@ swap_same_word:
 
     ; j1 is no longer needed
 
+    ; j1 will have 1s on the byte addressed by j2
     j1 <- 0xff
-    j1 << j2
+    j1 <- j1 << j2
+    ; ACCU will have 1s on the byte addressed by i1
     ACCU <- 0xff << i2
+    ; merge 1s of j1 and ACCU
     ACCU <- ACCU | j1
     ACCU <- INV ACCU
     ; ACCU now has a 1 every where, except where the 2 byte lie,
