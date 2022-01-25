@@ -486,6 +486,9 @@ swap_byte_end:
     ;   -----------------------------
     ;   --- check inner loop conditions ---
     if loopIndex === 0: jump perform_xor:
+
+    loopIndex <- loopIndex - 8
+
     jump: decrypt_loop_inner:
 
 perform_xor:
