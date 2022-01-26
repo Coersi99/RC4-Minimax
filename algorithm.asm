@@ -362,6 +362,8 @@ decrypt_loop_inner:
 
     ; ibox is no longer needed
 
+    ; BREAKPOINT A
+    
     ; now mutate the sbox, by swapping the ith and the jth byte
 swap_byte_start:
     ; first, check if we're operating on the same word
@@ -492,6 +494,9 @@ swap_byte_end:
     jump: decrypt_loop_inner:
 
 perform_xor:
+    ; BREAKPOINT B
+    ; analyze pattern here
+
     ; xor 4 bytes at once, by leveraging word based instructions
     ACCU <- i >> 2
     MAR <- INPUT_ADDR + i

@@ -46,6 +46,31 @@ def prga_next(self):
     return self.state[index]
 
 
+# record('A', index, i1, i2, j1, j2, loopIndex)
+tableA = [['index', 'i1', 'i2', 'j1', 'j2', 'loopIndex']]
+
+
+def recordA(index, i1, i2, j1, j2, loopIndex):
+    tableA.append([index, i1, i2, j1, j2, loopIndex])
+
+
+tableB = [['pattern']]
+
+
+def recordB(pattern):
+    tableB.append([pattern])
+
+
+def writeCSVFile(table, filename):
+    f = open(filename, "w")
+    for line in table:
+        f.write(';'.join(map(str, line)))
+
+        f.write("\n")
+
+    f.close()
+
+
 # tmp_adr
 # tmp_Si
 # tmp_Sj
@@ -56,13 +81,18 @@ def decrypt(sbox, input):
     sbox = list(bytes_to_words(sbox))
     words = bytes_to_words(input)
 
-
     i = 0
     j = 0
     for word in words:
         xorPattern = 0
         # -1 here, so we include the 0
         for loopIndex in range(0, 4):
+            # move box to the right position
+            # This is not needed in the asm version, as we count 24, 16, 8, 0 anyway
+            loopIndex = (3-loopIndex)
+            loopIndex *= 8
+
+            # increment i, counting it clockwise with respect to sbox length
             i += 1
             i &= 0xff
 
@@ -97,6 +127,9 @@ def decrypt(sbox, input):
             index = index + ibox
             index &= 0xff
 
+            # breakpoint A
+            recordA(index, i1, i2, j1, j2, loopIndex)
+
             # swap(self.state, self.i, self.j)
             swapBytes(sbox, i1, i2, j1, j2)
 
@@ -110,14 +143,12 @@ def decrypt(sbox, input):
             ibox >>= index
             ibox &= 0xff
             # box is verified to be correct
-            
-            # move box to the right position
-            # This is not needed in the asm version, as we count 24, 16, 8, 0 anyway
-            loopIndex = (3-loopIndex)
-            loopIndex *= 8
+
 
             ibox <<= loopIndex
             xorPattern |= ibox
+
+        recordB(xorPattern)
 
         yield word ^ xorPattern
 
@@ -136,7 +167,6 @@ def swapBytes(l, i1, i2, j1, j2):
         b = b << i2
 
         a = a | b
-
 
         tmp = 0xff << j2
         mask = 0xff << i2
@@ -182,6 +212,8 @@ def swapBytes(l, i1, i2, j1, j2):
     l[j1] = word
 
 # consumes an iterator, converting it to chunks
+
+
 def chunks(n, iterarable):
     chunk = []
     for elem in iterarable:
@@ -290,17 +322,33 @@ def verifySwapByte():
     for [l, a, b] in cases:
         bytes = list(bytes_to_words(l))
         a1 = a >> 2
-        a2 = 24- (a & 3)*8
+        a2 = 24 - (a & 3)*8
         b1 = b >> 2
-        b2 = 24- (b & 3)*8
+        b2 = 24 - (b & 3)*8
         swapBytes(bytes, a1, a2, b1, b2)
         got = list(word_to_bytes(bytes))
         swap(l, a, b)
 
         verify(l, got)
 
+def readBinaryWords(filename):
+    # content byte cased
+    content = list(open(filename, "rb").read())
+    # transform to be word based
+    return list(bytes_to_words(content))
+
+# run decryption on actual data
+key = readBinaryWords("./key")
+input = readBinaryWords("./data_encrypted")
+# call list on this to drain the iterator
+bytes = bytearray(word_to_bytes(decrypt(s_box(key), input)))
+bytes = bytes[:-3]
+open("output.jpeg", "wb").write(bytes)
+writeCSVFile(tableA, "breakpoints-a.csv")
+writeCSVFile(tableB, "breakpoints-b.csv")
 
 def run_tests():
+
 
     def to_byte(a, b):
         return int(a+b, 16)
@@ -332,6 +380,8 @@ def run_tests():
         got = got[:s]
 
         verify(got, expected)
+
+    
 
     def test(key, input, expected):
         key = to_bytes(key)
