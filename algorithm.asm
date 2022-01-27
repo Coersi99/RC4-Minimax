@@ -328,7 +328,6 @@ decrypt_loop_inner:
 
     ; ibox <- sbox[i]
     MAR <- SBOX_ADDR + i1
-    MAR <- ACCU
     ACCU <- MDR[MAR]
     ; move accu, so that the correct byte lies at 0..8 position.
     ; more significant bytes are irrelevant,
