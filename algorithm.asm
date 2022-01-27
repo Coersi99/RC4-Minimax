@@ -1,50 +1,66 @@
-const SBOX_ADDR=0
-const KEY_ADDR=80 ;80dec <- 50hex
-const KEY_LEN=4
+; adress of the SBOX
+const SBOX_ADDR = 0
+
+; adress and length of the key
+const KEY_ADDR = 80 ;80dec <- 50hex
+const KEY_LEN = 4
+
+; adress and length of the input
+const INPUT_ADDR = 96 ;96dec <- 60hex 
+const INPUT_LENGTH =  13265
+
+; length of one word
+const WORD_LEN = 4
+
+; useful byte masks for the read-functions
 const byte_4=255 ;00000000 00000000 00000000 11111111
 const byte_3=65280 ;00000000 00000000 11111111 00000000
 const byte_2=16711680 ;00000000 11111111 00000000 00000000
 const byte_1=-16777216 ;11111111 00000000 00000000 00000000
 
+; useful byte masks for the write-functions
 const delete_byte_4=-256 ;11111111 11111111 11111111 00000000
 const delete_byte_3=-65281 ;11111111 11111111 00000000 11111111
 const delete_byte_2=-16711681 ;11111111 00000000 11111111 11111111
 const delete_byte_1=16777215 ;00000000 11111111 11111111 11111111
 
-; TODO write the ACTUAL NUMBER IN HERE
-; THIS NUMBER IS MADE UP
-const INPUT_LENGTH =  13265
-; Whatever floats your goat! Allocate manually and load file at this position
-; THIS NUMBER IS MADE UP
-const INPUT_ADDR = 0xdeadbeef
-
-; number of bytes in one word
-const WORD_LEN=4
-
+; visualization of the program sequence
 main:
-    counter <- 256
-    for_i_in_0_to_256_wortadressiert
+    sbox_algorithm
+    decrypt
 
+; algorithm for shuffling the sbox
+sbox_algorithm:
+    counter <- 256
+    shuffle_sbox
+
+; prga + xor algorithm for decryption
+decrypt:
+    decrypt_setup
+    decrypt_loop_outer
+    
+//////////////////////////////////////
 get_key:
-    ; richtige Speicheradresse finden
+    ; find correct memory cell containing the key
     MAR <- 80
-    ; Daten schonmal reinladen
+    ; load in data for later use
     MDR <- [MAR]
 
-    ; i % keylength, je nachdem read-Funktion aufrufen
+    ; i % keylength, depending on that call the right read function
     ACCU <- i MOD 4
 
-    if ACCU <- 0: read_key_4
+    if ACCU <- 0: jump read_key_4
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : read_key_3
+    if ACCU <- 0 : jump read_key_3
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : read_key_2
+    if ACCU <- 0 : jump read_key_2
 
     ; k <- load key[i % keylength]
     read_key_1
 
+; delete specific bytes and shift to get the desired byte to the rightmost space of the memory cell
 read_key_4:
     MDR <- 255 & MDR
 
@@ -62,25 +78,27 @@ read_key_1:
 
 ////////////////////////////
 get_Si:
-    ; richtige Speicheradresse finden und schon einmal zwischenspeichern
+    ; get correct memory cell and save the adress for later use
     MAR <- i / 4
     tmp_adr <- i / 4
-    ; Daten schonmal reinladen
+    
+    ; load in data for the read function to use
     MDR <- [MAR]
 
-    ; richtige Speicherzelle finden, je nachdem read-Funktion aufrufen
+    ; call the correct read function with the help of modulo
     ACCU <- i MOD 4
 
-    if ACCU <- 0: read_Si_4
+    if ACCU <- 0: jump read_Si_4
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : read_Si_3
+    if ACCU <- 0 : jump read_Si_3
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : read_Si_2
+    if ACCU <- 0 : jump read_Si_2
 
     read_Si_1
 
+; delete specific bytes and shift to get the desired byte to the rightmost space of the memory cell
 read_Si_4:
     MDR <- 255 & MDR
     tmp_Si <- MDR
@@ -102,58 +120,61 @@ read_Si_1:
 
 ///////////////////////
 get_Sj:
-    ; richtige Speicheradresse finden
+    ; get correct memory cell
     MAR <- j / 4
-    ; Daten schonmal reinladen
+    ; load in data for the read function to use
     MDR <- [MAR]
 
-    ; richtige Speicherzelle finden, je nachdem read-Funktion aufrufen
+    ; call the correct read function with the help of modulo
     ACCU <- j MOD 4
 
-    if ACCU <- 0: read_Sj_4
+    if ACCU <- 0: jump read_Sj_4
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : read_Sj_3
+    if ACCU <- 0 : jump read_Sj_3
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : read_Sj_2
+    if ACCU <- 0 : jump read_Sj_2
 
     read_Sj_1
 
+; delete specific bytes and shift to get the desired byte to the rightmost space of the memory cell
+; shift tmp_Si to the position where Sj was
 read_Sj_4:
     MDR <- 255 & MDR
-    tmp_Sj <- MDR
+    tmp_Sj <- MDR ; needed later for the write functions, no need to shift Si, position 4 is already correct
 
 read_Sj_3:
     MDR <- 65280 & MDR
     MDR <- 0^8@MDR[31..8]
-    tmp_Sj <- MDR
-    tmp_Si <- tmp_Si[31-8..0]@0^8;auf Stelle 3 verschieben
+    tmp_Sj <- MDR                   ; needed later for the write functions
+    tmp_Si <- tmp_Si[31-8..0]@0^8   ; shift Si to position 3
 
 read_Sj_2:
     MDR <- 16711680 & MDR
     MDR <- 0^16@MDR[31..16]
-    tmp_Sj <- MDR
-    tmp_Si <- tmp_Si[31--16..0]@0^16;auf Stelle 2 verschieben
+    tmp_Sj <- MDR                   ; needed later for the write functions
+    tmp_Si <- tmp_Si[31--16..0]@0^16 ;shift Si to position 2
 
 read_Sj_1:
     MDR <- -16777216 & MDR
     MDR <- 0^24@MDR[31..24]
-    tmp_Sj <- MDR
-    tmp_Si <- tmp_Si[31-24..0]@0^24;auf Stelle 1 verschieben
+    tmp_Sj <- MDR                   ; needed later for the write functions
+    tmp_Si <- tmp_Si[31-24..0]@0^24 ;shift Si to position 1
 
 ///////////////////////
 
+; function to shift tmp_Sj to the position where Si was at the beginning
 S.L._tmp_Sj:
     ACCU <- i mod 4
 
     if ACCU <- 0: break
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : S.L._tmp_Sj_8
+    if ACCU <- 0 : jump S.L._tmp_Sj_8
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : S.L._tmp_Sj_16
+    if ACCU <- 0 : jump S.L._tmp_Sj_16
 
     S.L._tmp_Sj_24
 
@@ -167,23 +188,25 @@ S.L._tmp_Sj_24:
     tmp_Sj <- tmp_Sj[31-24..0]@0^24
 
 ///////
+; put the value of Si into the position of Sj aka Swap 1 of 2
 put_Si_into_Sj:
-    ; Daten schonmal reinladen
+    ; load in data for later use
     MDR <- [MAR]
 
-    ; richtige Speicherzelle finden, je nachdem write-Funktion aufrufen
+    ; find correct memory cell , depending on that call the right write function
     ACCU <- j MOD 4
 
-    if ACCU <- 0: write_Sj_4
+    if ACCU <- 0: jump write_Sj_4
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : write_Sj_3
+    if ACCU <- 0 : jump write_Sj_3
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : write_Sj_2
+    if ACCU <- 0 : jump write_Sj_2
 
     write_Sj_1
 
+; delete specific bytes of the input and overwrite the correct value of the memory cell
 write_Sj_4:
 
     MDR <- -256 & MDR ;delete_byte_4
@@ -207,25 +230,27 @@ write_Sj_1:
     MDR <- 16777215 & MDR;delete_byte_1
     MDR <- tmp_Si | MDR;write tmp_Si in S[j]
     M[MAR] <- MDR
-//////
+//////////
+; put the value of Sj into the position of Si aka Swap 2 of 2
 put_Sj_into_Si:
-    ; Daten schonmal reinladen
+    ; load in data for later use
     MAR <- tmp_adr
     MDR <- [MAR]
 
-    ; richtige Speicherzelle finden, je nachdem write-Funktion aufrufen
+    ; find correct memory cell , depending on that call the right write function
     ACCU <- i MOD 4
 
-    if ACCU <- 0: write_Si_4
+    if ACCU <- 0: jump write_Si_4
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : write_Si_3
+    if ACCU <- 0 : jump write_Si_3
 
     ACCU <- ACCU - 1
-    if ACCU <- 0 : write_Si_2
+    if ACCU <- 0 : jump write_Si_2
 
     write_Si_1
 
+; delete specific bytes of the input and overwrite the correct value of the memory cell
 write_Si_4:
 
     MDR <- -256 & MDR;delete_byte_4
@@ -252,7 +277,7 @@ write_Si_1:
 
 ////////////////
 
-for_i_in_0_to_256:
+shuffle_sbox:
 
     ; load k
     get_key
@@ -279,8 +304,13 @@ for_i_in_0_to_256:
     i <- i + 1
     counter - 1
 
-    if counter <- 0: decrypt_setup
-    for_i_in_0_to_256
+    ; if repeated 256 times, the sbox should be correctly shuffled
+    if counter <- 0: break
+    
+    ; else loop again 
+    shuffle_sbox
+
+///////////////
 
 decrypt_setup:
     ; here we decrypt the final result
@@ -301,8 +331,10 @@ decrypt_setup:
     ; divide wordIndex by 4 (same as >> 2), because input is byte addressed
     wordIndex <- wordIndex >> 2
 
+///////////////
+
 decrypt_loop_outer:
-    ; we want to xor 4 bytes at ones.
+    ; we want to xor 4 bytes at once.
     ; we save the pattern for that in here
     pattern <- 0
 
@@ -310,6 +342,11 @@ decrypt_loop_outer:
     ; e.g. {24, 16, 8, 0}
     ; this is useful to later use it as proper byte shift-position in `pattern`
     loopIndex <- 24
+
+    decrypt_loop_inner
+
+///////////////
+
 decrypt_loop_inner:
     ; count i clockwise. mod 256, because 256 is the length of the sbox
     i <- i + 1
@@ -318,7 +355,7 @@ decrypt_loop_inner:
     # i1 is the word-address part of the i-th sbox byte
     # while i2 is the byte position of i-th sbox byte
 
-    i1 <- (i >> 2)
+    i1 <- i >> 2
     i2 <- i & 0b11 ; 0b11 === 3
     i2 <- i2 * 8
     ; we need to do this step, because the first byte
@@ -350,7 +387,7 @@ decrypt_loop_inner:
     j2 <- 24 - j2
 
     ; index <- sbox[j]
-    ACCU <- SBOX_ADDR + j2
+    ACCU <- SBOX_ADDR + j1
     MAR <- ACCU
     ACCU <- MDR[MAR]
 
@@ -364,11 +401,21 @@ decrypt_loop_inner:
     ; BREAKPOINT A
     
     ; now mutate the sbox, by swapping the ith and the jth byte
+    swap_byte_start
+
+///////////////
+
 swap_byte_start:
     ; first, check if we're operating on the same word
     ACCU <- i - j
-    if ACCU === 0: jump swap_same_word:
-    jump swap_differing_words:
+   
+    if ACCU === 0: jump swap_same_word
+    jump swap_differing_word
+
+    jump swap_byte_end
+
+///////////////
+
 swap_same_word:
     ; if we're operating on the same byte, abort
     ACCU <- i2 - j2
@@ -418,9 +465,11 @@ swap_same_word:
     MAR <- SBOX_ADDR + i1
     MDR[MAR] <- ibox
     ; and return
-    jump swap_byte_end:
+    jump: swap_byte_end
 
-swap_same_word:
+///////////////
+
+swap_differing_word:
     ; i1 != j1
 
     ; fetch words from buffer
@@ -463,6 +512,10 @@ swap_same_word:
     MDR[MAR] <- ibox
 
     ; return
+    jump: swap_byte_end
+
+///////////////
+
 swap_byte_end:
     ; ibox, i1, i2, j1, j2 are no longer needed
 
@@ -486,11 +539,13 @@ swap_byte_end:
 
     ;   -----------------------------
     ;   --- check inner loop conditions ---
-    if loopIndex === 0: jump perform_xor:
+    if loopIndex === 0: jump perform_xor
 
     loopIndex <- loopIndex - 8
 
     jump: decrypt_loop_inner:
+
+///////////////
 
 perform_xor:
     ; BREAKPOINT B
@@ -512,7 +567,9 @@ perform_xor:
     ; (wordIndex == 0) <=> decryption done, goto end
     if wordIndex == 0: jump end
     ; else, another iteration
-    jump decrypt_loop_outer
+    jump: decrypt_loop_outer
+
+///////////////
 
 end:
 
