@@ -338,10 +338,10 @@ decrypt_loop_outer:
     ; we save the pattern for that in here
     pattern <- 0
 
-    ; loopindex starts at 24 and will de decremented in steps of 8
-    ; e.g. {24, 16, 8, 0}
+    ; loopindex starts at 0 and will be incremented in steps of 8
+    ; e.g. {0, 8, 16, 24}
     ; this is useful to later use it as proper byte shift-position in `pattern`
-    loopIndex <- 24
+    loopIndex <- 0
 
     decrypt_loop_inner
 
@@ -539,9 +539,10 @@ swap_byte_end:
 
     ;   -----------------------------
     ;   --- check inner loop conditions ---
-    if loopIndex === 0: jump perform_xor
+    ACCU = 24 - loopIndex
+    if ACCU === 0: jump perform_xor
 
-    loopIndex <- loopIndex - 8
+    loopIndex <- loopIndex + 8
 
     jump: decrypt_loop_inner:
 
