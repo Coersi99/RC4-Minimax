@@ -322,14 +322,8 @@ decrypt_setup:
     i <- 0
     j <- 0
 
-    ; NOTE: if we could, we can replace wordIndex.
-    ; i don't care all that much
-
-    ; set wordIndex to be the length of the input
-    ; when wordIndex is 0, we stop iterating
-    wordIndex <- INPUT_LENGTH
-    ; divide wordIndex by 4 (same as >> 2), because input is byte addressed
-    wordIndex <- wordIndex >> 2
+    ; when wordIndex<<2 is greater than INPUT_LENGTH, we stop iterating
+    wordIndex <- 0
 
 ///////////////
 
@@ -547,8 +541,8 @@ perform_xor:
     ; analyze pattern here
 
     ; xor 4 bytes at once, by leveraging word based instructions
-    ACCU <- i >> 2
-    MAR <- INPUT_ADDR + i
+    ACCU <- wordIndex + INPUT_ADDR
+    MAR <- ACCU
     ACCU <- MDR[MAR]
     ACCU <- ACCU xor pattern
     MDR[MAR] <- ACCU
@@ -556,11 +550,16 @@ perform_xor:
     ;   -----------------------------
     ;   --- check outer loop conditions ---
 
-    ; decrement wordIndex
-    wordIndex <- wordIndex - 1
+    ; select next word
+    wordIndex <- wordIndex + 1
 
-    ; (wordIndex == 0) <=> decryption done, goto end
-    if wordIndex == 0: jump end
+    # repeate if (INPUT_LENGHT - wordIndex<<2) < 4
+    ACCU = wordIndex << 2
+    ACCU = INPUT_LENGTH - ACCU
+    # cut the last 2 bits, i.e.
+    # ACCU>>2 != 0 <=> ACCU < 4
+    ACCU = ACCU >> 2
+    if ACCU === 0: jump end
     ; else, another iteration
     jump: decrypt_loop_outer
 

@@ -1,6 +1,4 @@
 
-from cmath import exp
-
 
 def newSbox(key):
     state = list(range(256))
@@ -44,12 +42,6 @@ def writeCSVFile(table, filename):
 
     f.close()
 
-
-# tmp_adr
-# tmp_Si
-# tmp_Sj
-# i
-# j
 
 def decrypt(sbox, input):
     sbox = list(bytes_to_words(sbox))
@@ -170,9 +162,7 @@ def swapBytes(l, i1, i2, j1, j2):
     word = word | a
     l[j1] = word
 
-# consumes an iterator, converting it to chunks
-
-
+"""consumes an iterator, converting it to chunks"""
 def chunks(n, iterarable):
     chunk = []
     for elem in iterarable:
@@ -212,8 +202,6 @@ def word_to_bytes(input):
         yield (n >> 8) & 0xff
         yield (n >> 16) & 0xff
         yield (n >> 24) & 0xff
-
-# this is just used as a test function
 
 
 def verify(a, b, hexPrint=False):
@@ -256,13 +244,11 @@ def verifySwapByte():
     )
 
 
-
 def presetSBox():
     key = bytearray(open("./key", "rb").read())
     return newSbox(key)
 
-# run decryption on actual data
-
+"""decrypt real input data"""
 def runHWPTest():
     def wordsFromByteList(inp):
         return list(bytes_to_words(inp))
