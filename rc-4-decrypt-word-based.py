@@ -63,7 +63,7 @@ def decrypt(sbox, input):
         for loopIndex in range(0, 4):
             # move box to the right position
             # This is not needed in the asm version, as we count 24, 16, 8, 0 anyway
-            loopIndex = (3-loopIndex)
+            # loopIndex = (3-loopIndex)
             loopIndex *= 8
 
             # increment i, counting it clockwise with respect to sbox length
@@ -75,7 +75,7 @@ def decrypt(sbox, input):
             i1 = i >> 2
             i2 = i & 0b11
             i2 *= 8
-            i2 = 24 - i2
+            # i2 = 24 - i2
 
             ibox = sbox[i1]
             ibox = ibox >> i2
@@ -92,7 +92,7 @@ def decrypt(sbox, input):
             j1 = j >> 2
             j2 = j & 0b11
             j2 *= 8
-            j2 = 24 - j2
+            # j2 = 24 - j2
 
             index = sbox[j1]
             index = index >> j2
@@ -112,7 +112,7 @@ def decrypt(sbox, input):
 
             index = index & 0b11
             index *= 8
-            index = 24 - index
+            # index = 24 - index
 
             ibox >>= index
             ibox &= 0xff
