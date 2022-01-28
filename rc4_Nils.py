@@ -1,4 +1,7 @@
 
+from unittest import expectedFailure
+
+
 def swap(list, i, j):
     a = list[i]
     b = list[j]
@@ -45,7 +48,6 @@ class Rc4:
         index &= 255
 
         s = self.state[index]
-        print(s)
         return s
 
     def decrypt(self, input):
@@ -96,10 +98,32 @@ def run_tests():
         expected="97ab8a1bf0afb96132f2f67258da15a8"
     )
 
-
-
 run_tests()
 
+def testRealImplementation():
+    def verify(got, exp):
+        if got == exp:
+            print("check.")
+            return
+        print("got: ", got)
+        print("exp: ", exp)
+        print()
+
+    input = list(open("./data_encrypted", "rb").read())
+    expected = list(open("./result.jpeg", "rb").read())
+
+    key = list(open("./key", "rb").read())
+    expectedSbox = list(open("./sBox_shuffled.txt", "rb").read())
+    # len is 13265
+
+    sbox = Rc4(key)
+    verify(sbox.state, expectedSbox)
+
+    got = sbox.decrypt(input)
+    verify(got, expected)
+
+
+testRealImplementation()
 
 # input is expected to be a string where 2 characters make a byte
 # key also is expected to be a string where 2 characters make a byte

@@ -1,5 +1,8 @@
 
-def s_box(key):
+from cmath import exp
+
+
+def newSbox(key):
     state = list(range(256))
     j = 0
     for i in range(256):
@@ -50,7 +53,7 @@ def writeCSVFile(table, filename):
 
 def decrypt(sbox, input):
     sbox = list(bytes_to_words(sbox))
-    words = bytes_to_words(input)
+    words = list(bytes_to_words(input))
 
     i = 0
     j = 0
@@ -195,10 +198,11 @@ def bytes_to_words(input):
     # therefore we first rewrite the input a little
     for ch in chunks(4, input):
         # make sure chunk has exactly 4 elements
-        fill(ch, 4, 0)
+        while len(ch) < 4:
+            ch.append(0)
         [a, b, c, d] = ch
 
-        res = (d << 24) + (c << 16) + (b << 8) + a
+        res = a + (b << 8) + (c << 16) + (d << 24)
         yield res
 
 
@@ -252,42 +256,49 @@ def verifySwapByte():
     )
 
 
-def readBinaryWords(filename):
-    # content byte cased
-    content = list(open(filename, "rb").read())
-    # transform to be word based
-    return list(bytes_to_words(content))
-
 
 def presetSBox():
     key = bytearray(open("./key", "rb").read())
-    return s_box(key)
+    return newSbox(key)
 
 # run decryption on actual data
 
+def runHWPTest():
+    def wordsFromByteList(inp):
+        return list(bytes_to_words(inp))
 
-def runActualData():
-    input = readBinaryWords("./data_encrypted")
-    # call list on this to drain the iterator
-    bytes = bytearray(word_to_bytes(decrypt(presetSBox(), input)))
-    bytes = bytes[:-3]
-    open("output.jpeg", "wb").write(bytes)
+    input = list(open("./data_encrypted", "rb").read())
+    expected = list(open("./result.jpeg", "rb").read())
+
+    key = list(open("./key", "rb").read())
+    expectedSbox = list(open("./sBox_shuffled.txt", "rb").read())
+    # len is 13265
+
+    sbox = newSbox(key)
+    print("     sbox")
+    verify(sbox, expectedSbox)
+
+
+    got = list(word_to_bytes(decrypt(sbox, input)))
+    got = got[:len(expected)]
+
+    print("     decryption")
+    verify(got, expected)
+
+    # save output
+    
+    open("output.jpeg", "wb").write(got)
     writeCSVFile(tableA, "breakpoints-a.csv")
     writeCSVFile(tableB, "breakpoints-b.csv")
 
-# runActualData()
 
-def run_tests():
+runHWPTest()
+exit(1)
+
+def tests():
     print("     Test sbox")
     expected = bytearray(open("./sBox_shuffled.txt", "rb").read())
     verify(expected, presetSBox(), True)
-
-    def to_byte(a, b):
-        return int(a+b, 16)
-
-    def to_bytes(s):
-        s = list(s)
-        return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
 
     print("     Test chunks")
     verify(map(list, chunks(2, [0, 0, 0, 0])), [[0, 0], [0, 0]])
@@ -307,8 +318,16 @@ def run_tests():
     print("     Test swapByte")
     verifySwapByte()
 
-    print("     Test implementation")
+    print("     Test word / byte handling for lists of uneven size")
     cases = ["010203040506070809", "aabbccddeeff0011"]
+
+    def to_byte(a, b):
+        return int(a+b, 16)
+
+    def to_bytes(s):
+        s = list(s)
+        return [to_byte(s[i-1], s[i]) for i in range(len(s)) if i & 1 == 1]
+
     for expected in map(to_bytes, cases):
         got = bytes_to_words(expected)
         got = list(word_to_bytes(got))
@@ -322,7 +341,7 @@ def run_tests():
         input = to_bytes(input)
         expected = to_bytes(expected)
 
-        got = list(word_to_bytes(decrypt(s_box(key), input)))
+        got = list(word_to_bytes(decrypt(newSbox(key), input)))
 
         if (got != expected):
             print("\n[test failed] expected output didnt match actual output!")
@@ -354,4 +373,4 @@ def run_tests():
     )
 
 
-run_tests()
+tests()
