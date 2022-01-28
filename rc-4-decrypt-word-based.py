@@ -293,7 +293,6 @@ def runHWPTest():
 
 
 runHWPTest()
-exit(1)
 
 def tests():
     print("     Test sbox")
