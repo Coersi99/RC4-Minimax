@@ -1,7 +1,4 @@
 
-from re import A
-
-
 def s_box(key):
     state = list(range(256))
     j = 0
@@ -60,12 +57,7 @@ def decrypt(sbox, input):
     for word in words:
         xorPattern = 0
         # -1 here, so we include the 0
-        for loopIndex in range(0, 4):
-            # move box to the right position
-            # This is not needed in the asm version, as we count 24, 16, 8, 0 anyway
-            # loopIndex = (3-loopIndex)
-            loopIndex *= 8
-
+        for loopIndex in [0, 8, 16, 24]:
             # increment i, counting it clockwise with respect to sbox length
             i += 1
             i &= 0xff
@@ -79,11 +71,8 @@ def decrypt(sbox, input):
 
             ibox = sbox[i1]
             ibox = ibox >> i2
-            # i box is verified to be correct
 
             # add sbox[i][i2] to j
-            # self.j += self.state[self.i]
-            # self.j &= 0xff
             j += ibox
             j &= 0xff
             # j is verified to be correct
@@ -92,11 +81,9 @@ def decrypt(sbox, input):
             j1 = j >> 2
             j2 = j & 0b11
             j2 *= 8
-            # j2 = 24 - j2
 
             index = sbox[j1]
             index = index >> j2
-            # (jbox & 0xff) is verified to be correct
 
             index = index + ibox
             index &= 0xff
@@ -104,7 +91,6 @@ def decrypt(sbox, input):
             # breakpoint A
             recordA(index, i1, i2, j1, j2, loopIndex)
 
-            # swap(self.state, self.i, self.j)
             swapBytes(sbox, i1, i2, j1, j2)
 
             indexAddr = index >> 2
@@ -112,11 +98,9 @@ def decrypt(sbox, input):
 
             index = index & 0b11
             index *= 8
-            # index = 24 - index
 
             ibox >>= index
             ibox &= 0xff
-            # box is verified to be correct
 
             ibox <<= loopIndex
             xorPattern |= ibox
