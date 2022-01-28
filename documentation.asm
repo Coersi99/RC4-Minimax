@@ -1,16 +1,17 @@
-; this is the 
+; This is the documentation of the Minimax-configuration from Chris-Bennet Fleger, Nils Martel and Falk Stock.
+
+/////////////////////////////////////////////////
 
 ; some help for understanding our code:
 
-; a)    a << b  means a is shifted to the left by b bits, "empty" bits on the right are set to 0
-;       a >> b  means a is shifted to the right by b bits, "empty" bits on the left are set to 0 (unsigned mode)
+; a)    a << b  means a is shifted to the left by b bits, "empty" bits on the right hand side are set to 0
+;       a >> b  means a is shifted to the right by b bits, "empty" bits on the left hand side are set to 0 (unsigned mode)
 
-; b)    these equivalences are used in our programming, because they are valid for binary numbers and lower the "costs" of our program
+; b)    these equivalences are used in our code, because they are valid for binary numbers and lower the "costs" of our program
 
 ;       a mod b === a & (b-1)
 ;       a / b === a >> b (while b is 2^n and n is a whole positive number)
 ;       a | b === a + b
-
 
 
 ////////////////////////////////////////
