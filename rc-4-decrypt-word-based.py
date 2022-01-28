@@ -67,7 +67,6 @@ def decrypt(sbox, input):
             i1 = i >> 2
             i2 = i & 0b11
             i2 *= 8
-            # i2 = 24 - i2
 
             ibox = sbox[i1]
             ibox = ibox >> i2
