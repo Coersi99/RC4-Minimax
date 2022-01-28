@@ -1,6 +1,7 @@
 
 from re import A
 
+
 def s_box(key):
     state = list(range(256))
     j = 0
@@ -117,7 +118,6 @@ def decrypt(sbox, input):
             ibox &= 0xff
             # box is verified to be correct
 
-
             ibox <<= loopIndex
             xorPattern |= ibox
 
@@ -210,21 +210,21 @@ def bytes_to_words(input):
     # we expect the input to be an array of bytes.
     # This implementation is supposed to treat an input word addressed.
     # therefore we first rewrite the input a little
-    for c in chunks(4, input):
+    for ch in chunks(4, input):
         # make sure chunk has exactly 4 elements
-        fill(c, 4, 0)
-        [a, b, c1, d] = c
+        fill(ch, 4, 0)
+        [a, b, c, d] = ch
 
-        res = (a << 24) + (b << 16) + (c1 << 8) + d
+        res = (d << 24) + (c << 16) + (b << 8) + a
         yield res
 
 
 def word_to_bytes(input):
     for n in input:
-        yield (n >> 24) & 0xff
-        yield (n >> 16) & 0xff
-        yield (n >> 8) & 0xff
         yield (n) & 0xff
+        yield (n >> 8) & 0xff
+        yield (n >> 16) & 0xff
+        yield (n >> 24) & 0xff
 
 # this is just used as a test function
 
@@ -248,7 +248,7 @@ def verifySwapByte():
     def swapBytesC(l, i1, i2, j1, j2):
         # clone list
         lnew = list(l)
-        swapBytes(lnew, i1, 24-i2, j1, 24-j2)
+        swapBytes(lnew, i1, i2, j1, j2)
         return lnew
 
     # direct testing
@@ -265,44 +265,9 @@ def verifySwapByte():
     )
     verify(
         swapBytesC([0x01020304, 0x01020304], 0, 1*8, 0, 3*8),
-        [0x01040302, 0x01020304], True
-    )
-    verify(
-        swapBytesC([0xf1020304, 0x01020304], 0, 1*8, 0, 3*8),
-        [0xf1040302, 0x01020304], True
+        [0x03020104, 0x01020304], True
     )
 
-    # i != j
-    verify(
-        swapBytesC([0x01020304, 0x05060708], 0, 0, 1, 0),
-        [0x05020304, 0x01060708], True
-    )
-    verify(
-        swapBytesC([0x01020304, 0x05060708], 0, 3*8, 1, 2*8),
-        [0x01020307, 0x05060408], True
-    )
-
-    # more automatic solution
-    cases = [
-        [[1, 2, 3, 4], 1, 2],
-        [[1, 2, 3, 4], 0, 2],
-        [[1, 2, 3, 4], 3, 2],
-        [[1, 2, 3, 4, 5, 6, 7, 8], 3, 2],
-        [[1, 2, 3, 4, 5, 6, 7, 8], 6, 1],
-        [[1, 2, 3, 4, 5, 6, 7, 8], 2, 7],
-    ]
-
-    for [l, a, b] in cases:
-        bytes = list(bytes_to_words(l))
-        a1 = a >> 2
-        a2 = 24 - (a & 3)*8
-        b1 = b >> 2
-        b2 = 24 - (b & 3)*8
-        swapBytes(bytes, a1, a2, b1, b2)
-        got = list(word_to_bytes(bytes))
-        l[a], l[b] = l[b], l[a]
-
-        verify(l, got)
 
 def readBinaryWords(filename):
     # content byte cased
@@ -311,21 +276,28 @@ def readBinaryWords(filename):
     return list(bytes_to_words(content))
 
 
-list(decrypt(s_box([0,0,0,0]), [0 for i in range(0, 13265)]))
-
+def presetSBox():
+    key = bytearray(open("./key", "rb").read())
+    return s_box(key)
 
 # run decryption on actual data
-key = readBinaryWords("./key")
-input = readBinaryWords("./data_encrypted")
-# call list on this to drain the iterator
-bytes = bytearray(word_to_bytes(decrypt(s_box(key), input)))
-bytes = bytes[:-3]
-open("output.jpeg", "wb").write(bytes)
-writeCSVFile(tableA, "breakpoints-a.csv")
-writeCSVFile(tableB, "breakpoints-b.csv")
+
+
+def runActualData():
+    input = readBinaryWords("./data_encrypted")
+    # call list on this to drain the iterator
+    bytes = bytearray(word_to_bytes(decrypt(presetSBox(), input)))
+    bytes = bytes[:-3]
+    open("output.jpeg", "wb").write(bytes)
+    writeCSVFile(tableA, "breakpoints-a.csv")
+    writeCSVFile(tableB, "breakpoints-b.csv")
+
+# runActualData()
 
 def run_tests():
-
+    print("     Test sbox")
+    expected = bytearray(open("./sBox_shuffled.txt", "rb").read())
+    verify(expected, presetSBox(), True)
 
     def to_byte(a, b):
         return int(a+b, 16)
@@ -338,12 +310,16 @@ def run_tests():
     verify(map(list, chunks(2, [0, 0, 0, 0])), [[0, 0], [0, 0]])
     verify(map(list, chunks(4, [0, 0, 0, 0])), [[0, 0, 0, 0]])
     print("     Test bytes_to_words")
-    verify(bytes_to_words([0, 0, 0, 0xff]), [0xff])
-    verify(bytes_to_words([0, 0, 0x8a, 0xff]), [0x8aff])
-    verify(bytes_to_words([0xff, 0, 0xff, 0xff]), [0xff00ffff])
+    verify(bytes_to_words([0, 0, 0, 0xff]), [0xff000000])
+    verify(bytes_to_words([0, 1, 2, 3]), [0x03020100])
+    verify(bytes_to_words([0, 1, 2, 3, 4, 5, 6, 7]), [0x03020100, 0x07060504])
+    verify(bytes_to_words([0, 0, 0x8a, 0xff]), [0xff8a0000])
+    verify(bytes_to_words([0xff, 0, 0xff, 0xff]), [0xffff00ff])
     print("     Test words_to_bytes")
     verify(word_to_bytes([0x01020304, 0x05060708, 0x0000090A]), [
-           1, 2, 3, 4, 5, 6, 7, 8, 0, 0, 9, 10])
+           4, 3, 2, 1, 8, 7, 6, 5, 10, 9, 0, 0])
+    verify(word_to_bytes([0x04030201, 0x08070605, 0x0c0b0a09]), [
+           1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
 
     print("     Test swapByte")
     verifySwapByte()
@@ -357,8 +333,6 @@ def run_tests():
         got = got[:s]
 
         verify(got, expected)
-
-    
 
     def test(key, input, expected):
         key = to_bytes(key)
