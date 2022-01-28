@@ -1,15 +1,6 @@
 
 from re import A
 
-
-def swap(list, i, j):
-    a = list[i]
-    b = list[j]
-
-    list[i] = b
-    list[j] = a
-
-
 def s_box(key):
     state = list(range(256))
     j = 0
@@ -23,27 +14,9 @@ def s_box(key):
         j &= 0xff
 
         # swap elements at index i and j
-        swap(state, i, j)
+        state[i], state[j] = state[j], state[i]
 
     return state
-
-
-def prga_next(self):
-    # first mutate s-box
-    self.i += 1
-    self.i &= 0xff
-    self.j += self.state[self.i]
-    self.j &= 0xff
-
-    swap(self.state, self.i, self.j)
-
-    # calulate index of element to return
-    index = self.state[self.i]+self.state[self.j]
-    index &= 255
-
-    # algorithm verified until here
-
-    return self.state[index]
 
 
 # record('A', index, i1, i2, j1, j2, loopIndex)
@@ -327,7 +300,7 @@ def verifySwapByte():
         b2 = 24 - (b & 3)*8
         swapBytes(bytes, a1, a2, b1, b2)
         got = list(word_to_bytes(bytes))
-        swap(l, a, b)
+        l[a], l[b] = l[b], l[a]
 
         verify(l, got)
 
@@ -336,6 +309,10 @@ def readBinaryWords(filename):
     content = list(open(filename, "rb").read())
     # transform to be word based
     return list(bytes_to_words(content))
+
+
+list(decrypt(s_box([0,0,0,0]), [0 for i in range(0, 13265)]))
+
 
 # run decryption on actual data
 key = readBinaryWords("./key")
