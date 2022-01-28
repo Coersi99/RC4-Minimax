@@ -287,7 +287,7 @@ def runHWPTest():
 
     # save output
     
-    open("output.jpeg", "wb").write(got)
+    open("output.jpeg", "wb").write(bytearray(got))
     writeCSVFile(tableA, "breakpoints-a.csv")
     writeCSVFile(tableB, "breakpoints-b.csv")
 
