@@ -358,10 +358,6 @@ decrypt_loop_inner:
     i1 <- i >> 2
     i2 <- i & 0b11 ; 0b11 === 3
     i2 <- i2 * 8
-    ; we need to do this step, because the first byte
-    ; we want to address, is highest up in the word
-    ; (e.g. as position 24)
-    i2 <- 24 - i2
 
     ; ibox <- sbox[i]
     MAR <- SBOX_ADDR + i1
@@ -384,7 +380,6 @@ decrypt_loop_inner:
     ; j2 is the byte position in that word
     j2 <- j & 0b11
     j2 <- j2 * 8
-    j2 <- 24 - j2
 
     ; index <- sbox[j]
     ACCU <- SBOX_ADDR + j1
@@ -527,7 +522,6 @@ swap_byte_end:
     ; extract the byte position from index
     index <- index & 0b11; 0b11 === 3
     index <- index * 8
-    index <- 24 - index
 
     ; single out the byte we want from the word
     ibox <- ibox >> index
